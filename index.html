@@ -1,277 +1,321 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Giraffe TV</title>
-
-<style>
-html,
-body{
-    margin:0;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    font-family:Arial,sans-serif;
-}
-
-/* FULL PAGE WALLPAPER */
-body{
-    background:url("website_Wallpaper.webp") center center / cover no-repeat;
-}
-
-/* TV CONTAINER */
-#tvWidget{
-    position:absolute;
-    width:700px;
-    max-width:90vw;
-    left:50%;
-    top:50%;
-    transform:translate(-50%,-50%);
-    user-select:none;
-    cursor:grab;
-}
-
-/* TV SKIN */
-#tvSkin{
-    width:100%;
-    display:block;
-    pointer-events:none;
-}
-
-/* SCREEN POSITION */
-#screen{
-    position:absolute;
-    left:21.8%;
-    top:31%;
-    width:52.8%;
-    height:26.8%;
-    overflow:hidden;
-    border-radius:6px;
-    background:#000;
-}
-
-/* YouTube iframe */
-#player{
-    width:100%;
-    height:100%;
-}
-
-/* Screen off overlay */
-#screenOff{
-    position:absolute;
-    inset:0;
-    background:black;
-    display:none;
-    z-index:10;
-}
-
-/* Button hitboxes */
-.button{
-    position:absolute;
-    cursor:pointer;
-    z-index:20;
-}
-
-/* Previous */
-#btnPrev{
-    left:39.5%;
-    top:76%;
-    width:6%;
-    height:5%;
-}
-
-/* Pause */
-#btnPause{
-    left:48%;
-    top:79%;
-    width:4%;
-    height:4%;
-}
-
-/* Power */
-#btnPower{
-    left:55%;
-    top:77%;
-    width:5%;
-    height:6%;
-}
-
-/* Play */
-#btnPlay{
-    left:63%;
-    top:78%;
-    width:5%;
-    height:4%;
-}
-
-/* Next */
-#btnNext{
-    left:71%;
-    top:76%;
-    width:6%;
-    height:5%;
-}
-
-.button:hover{
-    background:rgba(255,255,255,.08);
-    border-radius:50%;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giraffe TV</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            height: 100vh;
+            background: url('TV_Wallpaper.webp') no-repeat center center fixed;
+            background-size: cover;
+            overflow: hidden;
+            font-family: 'Press Start 2P', system-ui;
+            image-rendering: pixelated;
+        }
+        
+        #tv-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 620px;
+            height: 520px;
+            transform: translate(-50%, -50%);
+            cursor: grab;
+            user-select: none;
+            z-index: 100;
+            filter: drop-shadow(0 25px 50px rgba(0, 0, 0, 0.7));
+        }
+        
+        #tv-frame {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: url('TV_taust.png') no-repeat center center;
+            background-size: contain;
+        }
+        
+        #tv-screen {
+            position: absolute;
+            top: 148px;
+            left: 112px;
+            width: 385px;
+            height: 245px;
+            background: #000;
+            border: 12px solid #222;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.95);
+        }
+        
+        #youtube-player {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                transparent 0px,
+                transparent 3px,
+                rgba(0, 255, 100, 0.12) 3px,
+                rgba(0, 255, 100, 0.12) 6px
+            );
+            pointer-events: none;
+            z-index: 5;
+            animation: scan 6s linear infinite;
+        }
+        
+        @keyframes scan {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 600px; }
+        }
+        
+        /* Controls Overlay using SVG areas */
+        #controls-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .control-area {
+            position: absolute;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.1s;
+        }
+        
+        .control-area:active {
+            transform: scale(0.95);
+        }
+        
+        .status {
+            position: absolute;
+            top: 95px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            padding: 6px 18px;
+            font-size: 13px;
+            border: 3px solid #0f0;
+            text-shadow: 0 0 8px #0f0;
+            z-index: 15;
+            white-space: nowrap;
+            font-family: monospace;
+        }
+    </style>
 </head>
 <body>
-
-<div id="tvWidget">
-
-    <img id="tvSkin" src="TV_Taust.png" alt="TV">
-
-    <div id="screen">
-        <div id="player"></div>
-        <div id="screenOff"></div>
+    <div id="tv-container">
+        <div id="tv-frame">
+            <!-- Video Screen -->
+            <div id="tv-screen">
+                <iframe 
+                    id="youtube-player"
+                    src="https://www.youtube.com/embed/mtg72V7qnjw?enablejsapi=1&amp;controls=0&amp;rel=0&amp;modestbranding=1"
+                    title="YouTube video player"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                </iframe>
+                <div class="scanlines"></div>
+            </div>
+            
+            <!-- Status -->
+            <div class="status" id="status">NOW PLAYING</div>
+            
+            <!-- SVG Controls Overlay -->
+            <svg id="controls-svg" width="620" height="520" viewBox="0 0 511 547" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Clickable button areas (approximate positions based on SVG) -->
+            </svg>
+        </div>
     </div>
 
-    <div id="btnPrev" class="button"></div>
-    <div id="btnPause" class="button"></div>
-    <div id="btnPower" class="button"></div>
-    <div id="btnPlay" class="button"></div>
-    <div id="btnNext" class="button"></div>
-
-</div>
-
-<script src="https://www.youtube.com/iframe_api"></script>
-
-<script>
-
-/*************************************************
- YOUTUBE PLAYER
-*************************************************/
-
-let player;
-let tvOn = true;
-
-function onYouTubeIframeAPIReady(){
-
-    player = new YT.Player('player',{
-        videoId:'mtg72V7qnjw',
-        playerVars:{
-            autoplay:1,
-            controls:0,
-            rel:0,
-            modestbranding:1,
-            playsinline:1
-        },
-        events:{
-            onReady:(e)=>{
-                e.target.playVideo();
-            }
+    <script>
+        // Draggable TV
+        const container = document.getElementById('tv-container');
+        let isDragging = false;
+        let currentX = 0, currentY = 0;
+        let initialX = 0, initialY = 0;
+        
+        function dragStart(e) {
+            if (e.target.closest('#tv-screen') || e.target.closest('.control-area')) return;
+            
+            initialX = e.clientX - currentX;
+            initialY = e.clientY - currentY;
+            isDragging = true;
+            container.style.cursor = 'grabbing';
         }
-    });
-}
-
-/*************************************************
- BUTTONS
-*************************************************/
-
-const screenOff = document.getElementById("screenOff");
-
-document.getElementById("btnPlay").addEventListener("click",()=>{
-
-    if(!tvOn) return;
-
-    player.playVideo();
-});
-
-document.getElementById("btnPause").addEventListener("click",()=>{
-
-    if(!tvOn) return;
-
-    const state = player.getPlayerState();
-
-    if(state === 1){
-        player.pauseVideo();
-    }else{
-        player.playVideo();
-    }
-});
-
-document.getElementById("btnPower").addEventListener("click",()=>{
-
-    tvOn = !tvOn;
-
-    if(tvOn){
-
-        screenOff.style.display="none";
-        player.playVideo();
-
-    }else{
-
-        screenOff.style.display="block";
-        player.pauseVideo();
-    }
-});
-
-document.getElementById("btnPrev").addEventListener("click",()=>{
-
-    if(!tvOn) return;
-
-    player.seekTo(0,true);
-});
-
-document.getElementById("btnNext").addEventListener("click",()=>{
-
-    if(!tvOn) return;
-
-    player.seekTo(
-        player.getCurrentTime()+30,
-        true
-    );
-});
-
-/*************************************************
- DRAGGABLE TV
-*************************************************/
-
-const widget = document.getElementById("tvWidget");
-
-let dragging = false;
-let offsetX = 0;
-let offsetY = 0;
-
-widget.addEventListener("pointerdown",(e)=>{
-
-    dragging = true;
-
-    widget.setPointerCapture(e.pointerId);
-
-    const rect = widget.getBoundingClientRect();
-
-    offsetX = e.clientX - rect.left;
-    offsetY = e.clientY - rect.top;
-
-    widget.style.cursor = "grabbing";
-});
-
-window.addEventListener("pointermove",(e)=>{
-
-    if(!dragging) return;
-
-    widget.style.left =
-        (e.clientX - offsetX) + "px";
-
-    widget.style.top =
-        (e.clientY - offsetY) + "px";
-
-    widget.style.transform = "none";
-});
-
-window.addEventListener("pointerup",()=>{
-
-    dragging = false;
-    widget.style.cursor = "grab";
-});
-
-</script>
-
+        
+        function drag(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            currentX = e.clientX - initialX;
+            currentY = e.clientY - initialY;
+            container.style.transform = `translate(${currentX}px, ${currentY}px)`;
+        }
+        
+        function dragEnd() {
+            isDragging = false;
+            container.style.cursor = 'grab';
+        }
+        
+        // YouTube Player
+        let player;
+        
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-player', {
+                events: {
+                    'onReady': () => {
+                        document.getElementById('status').textContent = "STANDBY";
+                    },
+                    'onStateChange': (event) => {
+                        const status = document.getElementById('status');
+                        if (event.data === YT.PlayerState.PLAYING) {
+                            status.textContent = "NOW PLAYING";
+                        } else if (event.data === YT.PlayerState.PAUSED) {
+                            status.textContent = "PAUSED";
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Button Controls
+        function setupControls() {
+            const btnPower = createControlArea(235, 415, 50, 50, 'POWER');
+            const btnPlay = createControlArea(275, 415, 50, 50, 'PLAY');
+            const btnPause = createControlArea(330, 415, 50, 50, 'PAUSE');
+            const btnFF = createControlArea(385, 415, 50, 50, 'FF');
+            const btnRewind = createControlArea(190, 415, 50, 50, 'REWIND');
+            
+            document.getElementById('controls-svg').appendChild(btnPower);
+            document.getElementById('controls-svg').appendChild(btnPlay);
+            document.getElementById('controls-svg').appendChild(btnPause);
+            document.getElementById('controls-svg').appendChild(btnFF);
+            document.getElementById('controls-svg').appendChild(btnRewind);
+            
+            let powered = true;
+            
+            btnPower.addEventListener('click', () => {
+                powered = !powered;
+                if (!powered) {
+                    player.pauseVideo();
+                    document.getElementById('status').textContent = "POWER OFF";
+                } else {
+                    document.getElementById('status').textContent = "NOW PLAYING";
+                    player.playVideo();
+                }
+            });
+            
+            btnPlay.addEventListener('click', () => {
+                if (player && powered) player.playVideo();
+            });
+            
+            btnPause.addEventListener('click', () => {
+                if (player && powered) player.pauseVideo();
+            });
+            
+            btnFF.addEventListener('click', () => {
+                if (player && powered) {
+                    const time = player.getCurrentTime();
+                    player.seekTo(time + 15, true);
+                }
+            });
+            
+            btnRewind.addEventListener('click', () => {
+                if (player && powered) {
+                    const time = player.getCurrentTime();
+                    player.seekTo(Math.max(0, time - 15), true);
+                }
+            });
+        }
+        
+        function createControlArea(x, y, w, h, title) {
+            const area = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            area.setAttribute("x", x);
+            area.setAttribute("y", y);
+            area.setAttribute("width", w);
+            area.setAttribute("height", h);
+            area.setAttribute("fill", "transparent");
+            area.setAttribute("class", "control-area");
+            area.setAttribute("title", title);
+            return area;
+        }
+        
+        function loadYouTubeAPI() {
+            const tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            const firstScript = document.getElementsByTagName('script')[0];
+            firstScript.parentNode.insertBefore(tag, firstScript);
+        }
+        
+        function init() {
+            // Drag functionality
+            container.addEventListener('mousedown', dragStart);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+            
+            // Touch support
+            container.addEventListener('touchstart', (e) => {
+                if (e.target.closest('#tv-screen') || e.target.closest('.control-area')) return;
+                const touch = e.touches[0];
+                initialX = touch.clientX - currentX;
+                initialY = touch.clientY - currentY;
+                isDragging = true;
+            });
+            
+            document.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const touch = e.touches[0];
+                currentX = touch.clientX - initialX;
+                currentY = touch.clientY - initialY;
+                container.style.transform = `translate(${currentX}px, ${currentY}px)`;
+            });
+            
+            document.addEventListener('touchend', () => isDragging = false);
+            
+            loadYouTubeAPI();
+            setupControls();
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (!player) return;
+                switch(e.key) {
+                    case ' ': 
+                        e.preventDefault();
+                        const state = player.getPlayerState();
+                        if (state === 1) player.pauseVideo();
+                        else player.playVideo();
+                        break;
+                    case 'f':
+                        if (player) player.seekTo(player.getCurrentTime() + 15);
+                        break;
+                    case 'r':
+                        if (player) player.seekTo(player.getCurrentTime() - 15);
+                        break;
+                }
+            });
+        }
+        
+        window.onload = init;
+    </script>
 </body>
 </html>
