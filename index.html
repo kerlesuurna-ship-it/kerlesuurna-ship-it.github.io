@@ -1,210 +1,276 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interactive Flower Field</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+<title>Giraffe TV</title>
 
-    body {
-      overflow: hidden;
-      background: #dff7d8;
-      height: 100vh;
-      cursor: crosshair;
-      font-family: Arial, sans-serif;
-    }
+<style>
+html,
+body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    font-family:Arial,sans-serif;
+}
 
-    canvas {
-      display: block;
-    }
+/* FULL PAGE WALLPAPER */
+body{
+    background:url("website_Wallpaper.webp") center center / cover no-repeat;
+}
 
-    .title {
-      position: absolute;
-      top: 20px;
-      width: 100%;
-      text-align: center;
-      color: #4b7a4b;
-      font-size: 1.4rem;
-      letter-spacing: 2px;
-      pointer-events: none;
-      user-select: none;
-    }
-  </style>
+/* TV CONTAINER */
+#tvWidget{
+    position:absolute;
+    width:700px;
+    max-width:90vw;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    user-select:none;
+    cursor:grab;
+}
+
+/* TV SKIN */
+#tvSkin{
+    width:100%;
+    display:block;
+    pointer-events:none;
+}
+
+/* SCREEN POSITION */
+#screen{
+    position:absolute;
+    left:21.8%;
+    top:31%;
+    width:52.8%;
+    height:26.8%;
+    overflow:hidden;
+    border-radius:6px;
+    background:#000;
+}
+
+/* YouTube iframe */
+#player{
+    width:100%;
+    height:100%;
+}
+
+/* Screen off overlay */
+#screenOff{
+    position:absolute;
+    inset:0;
+    background:black;
+    display:none;
+    z-index:10;
+}
+
+/* Button hitboxes */
+.button{
+    position:absolute;
+    cursor:pointer;
+    z-index:20;
+}
+
+/* Previous */
+#btnPrev{
+    left:39.5%;
+    top:76%;
+    width:6%;
+    height:5%;
+}
+
+/* Pause */
+#btnPause{
+    left:48%;
+    top:79%;
+    width:4%;
+    height:4%;
+}
+
+/* Power */
+#btnPower{
+    left:55%;
+    top:77%;
+    width:5%;
+    height:6%;
+}
+
+/* Play */
+#btnPlay{
+    left:63%;
+    top:78%;
+    width:5%;
+    height:4%;
+}
+
+/* Next */
+#btnNext{
+    left:71%;
+    top:76%;
+    width:6%;
+    height:5%;
+}
+
+.button:hover{
+    background:rgba(255,255,255,.08);
+    border-radius:50%;
+}
+</style>
 </head>
 <body>
 
-<div class="title">Move your mouse through the flowers ✿</div>
+<div id="tvWidget">
 
-<canvas id="scene"></canvas>
+    <img id="tvSkin" src="TV_Taust.png" alt="TV">
+
+    <div id="screen">
+        <div id="player"></div>
+        <div id="screenOff"></div>
+    </div>
+
+    <div id="btnPrev" class="button"></div>
+    <div id="btnPause" class="button"></div>
+    <div id="btnPower" class="button"></div>
+    <div id="btnPlay" class="button"></div>
+    <div id="btnNext" class="button"></div>
+
+</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
-const canvas = document.getElementById("scene");
-const ctx = canvas.getContext("2d");
 
-let w, h;
-let mouse = {
-  x: -9999,
-  y: -9999
-};
+/*************************************************
+ YOUTUBE PLAYER
+*************************************************/
 
-function resize() {
-  w = canvas.width = window.innerWidth;
-  h = canvas.height = window.innerHeight;
+let player;
+let tvOn = true;
+
+function onYouTubeIframeAPIReady(){
+
+    player = new YT.Player('player',{
+        videoId:'mtg72V7qnjw',
+        playerVars:{
+            autoplay:1,
+            controls:0,
+            rel:0,
+            modestbranding:1,
+            playsinline:1
+        },
+        events:{
+            onReady:(e)=>{
+                e.target.playVideo();
+            }
+        }
+    });
 }
-window.addEventListener("resize", resize);
-resize();
 
-window.addEventListener("mousemove", e => {
-  mouse.x = e.clientX;
-  mouse.y = e.clientY;
+/*************************************************
+ BUTTONS
+*************************************************/
+
+const screenOff = document.getElementById("screenOff");
+
+document.getElementById("btnPlay").addEventListener("click",()=>{
+
+    if(!tvOn) return;
+
+    player.playVideo();
 });
 
-window.addEventListener("mouseleave", () => {
-  mouse.x = -9999;
-  mouse.y = -9999;
+document.getElementById("btnPause").addEventListener("click",()=>{
+
+    if(!tvOn) return;
+
+    const state = player.getPlayerState();
+
+    if(state === 1){
+        player.pauseVideo();
+    }else{
+        player.playVideo();
+    }
 });
 
-class Flower {
-  constructor(x, y, size) {
-    this.baseX = x;
-    this.baseY = y;
+document.getElementById("btnPower").addEventListener("click",()=>{
 
-    this.x = x;
-    this.y = y;
+    tvOn = !tvOn;
 
-    this.size = size;
+    if(tvOn){
 
-    this.angle = Math.random() * Math.PI * 2;
-    this.rotation = 0;
+        screenOff.style.display="none";
+        player.playVideo();
 
-    this.petals = 5 + Math.floor(Math.random() * 3);
+    }else{
 
-    this.color = [
-      "#ff8cc8",
-      "#ffd166",
-      "#ff9f9f",
-      "#cdb4ff",
-      "#ffffff"
-    ][Math.floor(Math.random() * 5)];
-
-    this.centerColor = "#ffcc33";
-
-    this.floatOffset = Math.random() * 1000;
-  }
-
-  update(time) {
-    // Gentle floating motion
-    this.y = this.baseY + Math.sin(time * 0.001 + this.floatOffset) * 2;
-
-    const dx = mouse.x - this.x;
-    const dy = mouse.y - this.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    // React to mouse
-    if (dist < 120) {
-      const force = (120 - dist) / 120;
-
-      this.rotation += force * 0.15;
-
-      this.x -= dx * force * 0.02;
-      this.y -= dy * force * 0.02;
-    } else {
-      // Return smoothly
-      this.x += (this.baseX - this.x) * 0.05;
-      this.y += (this.baseY - this.y) * 0.05;
-      this.rotation *= 0.95;
+        screenOff.style.display="block";
+        player.pauseVideo();
     }
-  }
+});
 
-  draw() {
-    ctx.save();
+document.getElementById("btnPrev").addEventListener("click",()=>{
 
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.rotation);
+    if(!tvOn) return;
 
-    // Stem
-    ctx.strokeStyle = "#5b9b5b";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, 10);
-    ctx.lineTo(0, 30);
-    ctx.stroke();
+    player.seekTo(0,true);
+});
 
-    // Petals
-    for (let i = 0; i < this.petals; i++) {
-      ctx.rotate((Math.PI * 2) / this.petals);
+document.getElementById("btnNext").addEventListener("click",()=>{
 
-      ctx.fillStyle = this.color;
+    if(!tvOn) return;
 
-      ctx.beginPath();
-      ctx.ellipse(
-        0,
-        this.size,
-        this.size * 0.5,
-        this.size,
-        0,
-        0,
-        Math.PI * 2
-      );
-      ctx.fill();
-    }
+    player.seekTo(
+        player.getCurrentTime()+30,
+        true
+    );
+});
 
-    // Center
-    ctx.fillStyle = this.centerColor;
-    ctx.beginPath();
-    ctx.arc(0, 0, this.size * 0.45, 0, Math.PI * 2);
-    ctx.fill();
+/*************************************************
+ DRAGGABLE TV
+*************************************************/
 
-    ctx.restore();
-  }
-}
+const widget = document.getElementById("tvWidget");
 
-const flowers = [];
+let dragging = false;
+let offsetX = 0;
+let offsetY = 0;
 
-for (let i = 0; i < 120; i++) {
-  flowers.push(
-    new Flower(
-      Math.random() * w,
-      Math.random() * h,
-      6 + Math.random() * 6
-    )
-  );
-}
+widget.addEventListener("pointerdown",(e)=>{
 
-function animate(time) {
-  ctx.clearRect(0, 0, w, h);
+    dragging = true;
 
-  // Soft background glow
-  const gradient = ctx.createRadialGradient(
-    w / 2,
-    h / 2,
-    100,
-    w / 2,
-    h / 2,
-    w
-  );
+    widget.setPointerCapture(e.pointerId);
 
-  gradient.addColorStop(0, "#e8ffe2");
-  gradient.addColorStop(1, "#d7f5cf");
+    const rect = widget.getBoundingClientRect();
 
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, w, h);
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
 
-  flowers.forEach(flower => {
-    flower.update(time);
-    flower.draw();
-  });
+    widget.style.cursor = "grabbing";
+});
 
-  requestAnimationFrame(animate);
-}
+window.addEventListener("pointermove",(e)=>{
 
-animate(0);
+    if(!dragging) return;
+
+    widget.style.left =
+        (e.clientX - offsetX) + "px";
+
+    widget.style.top =
+        (e.clientY - offsetY) + "px";
+
+    widget.style.transform = "none";
+});
+
+window.addEventListener("pointerup",()=>{
+
+    dragging = false;
+    widget.style.cursor = "grab";
+});
+
 </script>
 
 </body>
