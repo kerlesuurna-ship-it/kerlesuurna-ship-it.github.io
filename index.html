@@ -5,387 +5,308 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Giraffe TV</title>
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       width: 100vw;
       height: 100vh;
       overflow: hidden;
+      user-select: none;
     }
 
-    /* ── Full-page background ── */
+    /* ── Background ── */
     #bg {
       position: fixed;
       inset: 0;
-      background: url('TV_Wallpaper.jpg') center / cover no-repeat;
+      background: url('TV_Wallpaper.jpg') center/cover no-repeat;
       z-index: 0;
     }
 
-    /* ══════════════════════════════════════
-       WIDGET  —  draggable floating widget
-       PNG native size: 511 × 547 px
-    ══════════════════════════════════════ */
-    #widget {
+    /* ── TV Widget (draggable) ── */
+    #tv-widget {
       position: fixed;
+      width: 420px;
+      cursor: grab;
+      z-index: 10;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 430px;
-      height: 460px;   /* 430 × (547/511) ≈ 460 */
-      z-index: 10;
-      user-select: none;
-      cursor: grab;
-      filter: drop-shadow(0 20px 56px rgba(0,0,0,0.6));
+      filter: drop-shadow(0 20px 60px rgba(0,0,0,0.55));
+      transition: filter 0.3s;
     }
-    #widget:active { cursor: grabbing; }
+    #tv-widget:active { cursor: grabbing; }
+    #tv-widget.powered-off {
+      filter: drop-shadow(0 20px 60px rgba(0,0,0,0.55)) brightness(0.5) saturate(0.2);
+    }
 
-    /* ══════════════════════════════════════
-       LAYER STACK  (all position:absolute)
-         z=1  #video-layer   ← video + off overlay  (BEHIND skin)
-         z=2  #skin          ← transparent PNG frame (ON TOP of video)
-         z=3  .btn-hit       ← invisible click zones
-         z=4  #status        ← badge
-    ══════════════════════════════════════ */
+    /* ── Giraffe PNG ── */
+    #tv-body {
+      width: 100%;
+      display: block;
+      pointer-events: none;
+    }
 
-    /* ── Video layer ──
-       Screen hole in PNG: px (118,253) → (374,407)  =  256×154 px in 511×547 space
-       As % of widget:
-         left   = 118/511 = 23.09%
-         top    = 253/547 = 46.25%
-         width  = 256/511 = 50.10%
-         height = 154/547 = 28.15%
-    */
-    #video-layer {
+    /* ── Video screen
+         PNG is 511×547.
+         Screen rect: x=95,y=258 → x=393,y=390
+         left%   = 95/511   = 18.59%
+         top%    = 258/547  = 47.17%
+         width%  = 298/511  = 58.32%
+         height% = 132/547  = 24.13%
+         border-radius mirrors the rounded rect in the image
+    ── */
+    #screen-wrap {
       position: absolute;
-      left:   23.09%;
-      top:    46.25%;
-      width:  50.10%;
-      height: 28.15%;
-      z-index: 1;
-      background: #000;
+      left: 18.59%;
+      top: 47.17%;
+      width: 58.32%;
+      height: 24.13%;
+      border-radius: 12%;
       overflow: hidden;
-      border-radius: 4px;
+      background: #000;
+      pointer-events: none;
     }
 
-    #video {
+    #giraffe-video {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
     }
 
-    /* Dark "TV off" overlay */
+    /* Black/off overlay on screen */
     #screen-off {
       position: absolute;
       inset: 0;
-      background: radial-gradient(ellipse at 50% 40%, #1a1a2e 0%, #050508 100%);
+      background: radial-gradient(ellipse at center, #111 0%, #000 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 2;
+      opacity: 0;
       transition: opacity 0.4s;
-    }
-    #screen-off.hidden { opacity: 0; pointer-events: none; }
-    #screen-off svg { width: 36%; opacity: 0.3; }
-
-    /* ── Giraffe skin PNG — transparent bg + transparent screen hole ── */
-    #skin {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 2;
       pointer-events: none;
-      display: block;
+    }
+    #screen-off.visible { opacity: 1; }
+    #screen-off .power-icon {
+      width: 30px;
+      height: 30px;
+      opacity: 0.25;
     }
 
-    /* ══════════════════════════════════════
-       BUTTON HIT AREAS
-       SVG icon centres (511×547 space):
-         REWIND  ≈ (161, 422)  → 31.5%, 77.1%
-         PAUSE   ≈ (218, 431)  → 42.7%, 78.8%
-         POWER   ≈ (249, 429)  → 48.7%, 78.4%
-         PLAY    ≈ (281, 431)  → 55.0%, 78.8%
-         FFWD    ≈ (343, 422)  → 67.1%, 77.1%
-    ══════════════════════════════════════ */
+    /* ── Button hit areas
+         Derived from TV_Layout.svg (viewBox 511×547).
+         Button icon centres (approx):
+           Rewind  : (161, 422)
+           Pause   : (218, 431)
+           Play    : (280, 430)
+           FF      : (343, 422)
+           Power   : (249, 428)
+         These map directly as % of widget width/height.
+    ── */
     .btn-hit {
       position: absolute;
-      z-index: 3;
       cursor: pointer;
       border-radius: 50%;
-      /* debug: background: rgba(255,0,0,0.35); */
+      pointer-events: auto;
     }
-
-    #btn-rewind { left: 26%;   top: 72.5%; width: 10%; height: 9%; }
-    #btn-pause  { left: 38%;   top: 74.5%; width: 9%;  height: 9%; }
-    #btn-power  { left: 44%;   top: 74.5%; width: 9%;  height: 9%; }
-    #btn-play   { left: 50%;   top: 74.5%; width: 9%;  height: 9%; }
-    #btn-ffwd   { left: 62%;   top: 72.5%; width: 10%; height: 9%; }
-
-    /* ── Status badge ── */
-    #status {
+    .btn-hit::after {
+      content: '';
       position: absolute;
-      top: 8px;
-      right: 14px;
-      font-size: 9px;
-      font-family: 'Courier New', monospace;
-      color: rgba(255,255,255,0.85);
-      background: rgba(0,0,0,0.55);
-      padding: 2px 8px;
-      border-radius: 8px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      z-index: 4;
-      pointer-events: none;
-    }
-
-    /* ══════════════════════════════════════
-       BUTTON PRESS RIPPLE
-    ══════════════════════════════════════ */
-    @keyframes ripple {
-      0%   { transform: translate(-50%,-50%) scale(0);   opacity: 0.7; }
-      100% { transform: translate(-50%,-50%) scale(3.2); opacity: 0;   }
-    }
-    .ripple-dot {
-      position: absolute;
-      width: 28px;
-      height: 28px;
+      inset: 4px;
       border-radius: 50%;
-      background: rgba(255, 210, 80, 0.65);
-      pointer-events: none;
-      animation: ripple 0.44s ease-out forwards;
-      z-index: 5;
+      background: rgba(255,255,180,0);
+      transition: background 0.15s;
     }
+    .btn-hit:hover::after  { background: rgba(255,255,180,0.22); }
+    .btn-hit:active::after { background: rgba(255,255,180,0.40); }
 
-    /* ══════════════════════════════════════
-       TOAST NOTIFICATION
-    ══════════════════════════════════════ */
+    /* All button positions as % of the 511×547 SVG viewBox */
+    #btn-rw    { left: calc(161px / 511 * 100% - 18px); top: calc(422px / 547 * 100% - 18px); width:36px; height:36px; }
+    #btn-pause { left: calc(218px / 511 * 100% - 18px); top: calc(431px / 547 * 100% - 18px); width:36px; height:36px; }
+    #btn-play  { left: calc(280px / 511 * 100% - 18px); top: calc(430px / 547 * 100% - 18px); width:36px; height:36px; }
+    #btn-ff    { left: calc(343px / 511 * 100% - 18px); top: calc(422px / 547 * 100% - 18px); width:36px; height:36px; }
+    #btn-power { left: calc(249px / 511 * 100% - 20px); top: calc(428px / 547 * 100% - 20px); width:40px; height:40px; }
+
+    /* ── Toast ── */
     #toast {
       position: fixed;
-      bottom: 30px;
+      bottom: 28px;
       left: 50%;
-      transform: translateX(-50%);
-      background: rgba(8,8,8,0.78);
+      transform: translateX(-50%) translateY(16px);
+      background: rgba(10,10,10,0.78);
       color: #fff;
-      font-family: 'Courier New', monospace;
+      font-family: Georgia, serif;
       font-size: 13px;
-      letter-spacing: 0.09em;
-      padding: 8px 22px;
-      border-radius: 30px;
-      pointer-events: none;
+      padding: 8px 20px;
+      border-radius: 24px;
       opacity: 0;
-      transition: opacity 0.25s;
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
       z-index: 100;
-      backdrop-filter: blur(10px);
+      letter-spacing: 0.05em;
+      backdrop-filter: blur(8px);
       white-space: nowrap;
     }
-    #toast.show { opacity: 1; }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
 
-    /* ══════════════════════════════════════
-       DRAG HINT
-    ══════════════════════════════════════ */
-    #drag-hint {
+    /* ── Drag hint ── */
+    #hint {
       position: fixed;
-      top: 20px;
+      top: 16px;
       left: 50%;
       transform: translateX(-50%);
-      color: rgba(255,255,255,0.65);
-      font-family: 'Courier New', monospace;
+      background: rgba(0,0,0,0.42);
+      color: rgba(255,255,255,0.9);
+      font-family: Georgia, serif;
       font-size: 12px;
-      letter-spacing: 0.16em;
+      padding: 6px 18px;
+      border-radius: 20px;
       pointer-events: none;
-      z-index: 50;
-      text-shadow: 0 1px 6px rgba(0,0,0,0.9);
-      transition: opacity 1.2s;
+      z-index: 100;
+      backdrop-filter: blur(4px);
+      letter-spacing: 0.07em;
+      animation: fadeHint 5s ease forwards;
     }
-    #drag-hint.gone { opacity: 0; }
+    @keyframes fadeHint {
+      0%   { opacity:0; transform: translateX(-50%) translateY(-8px); }
+      12%  { opacity:1; transform: translateX(-50%) translateY(0); }
+      75%  { opacity:1; }
+      100% { opacity:0; }
+    }
   </style>
 </head>
 <body>
 
-<div id="bg"></div>
-<div id="drag-hint">☞ DRAG THE GIRAFFE</div>
-<div id="toast"></div>
+  <div id="bg"></div>
 
-<div id="widget">
+  <div id="tv-widget">
+    <!-- Giraffe body -->
+    <img id="tv-body" src="TV_Taust__1_.png" alt="Giraffe TV" draggable="false" />
 
-  <!-- LAYER 1: Video (behind the skin) -->
-  <div id="video-layer">
-    <video id="video" src="Giraffe_4k_Video__2_.mp4" loop playsinline preload="metadata"></video>
-    <div id="screen-off">
-      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M50 18 V50" stroke="#aaa" stroke-width="7" stroke-linecap="round"/>
-        <path d="M33 27 A25 25 0 1 0 67 27" stroke="#aaa" stroke-width="7" stroke-linecap="round" fill="none"/>
-      </svg>
+    <!-- Video screen sits precisely over the grey rounded rect -->
+    <div id="screen-wrap">
+      <video id="giraffe-video" src="Giraffe_4k_Video.mp4" loop playsinline preload="auto"></video>
+      <div id="screen-off">
+        <svg class="power-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+          <path d="M12 2v7"/>
+          <path d="M5.93 5.93A9 9 0 1 0 18.07 5.93"/>
+        </svg>
+      </div>
     </div>
+
+    <!-- Invisible button hit areas (mapped from TV_Layout.svg) -->
+    <div class="btn-hit" id="btn-rw"    title="Rewind 10s"></div>
+    <div class="btn-hit" id="btn-pause" title="Pause"></div>
+    <div class="btn-hit" id="btn-play"  title="Play"></div>
+    <div class="btn-hit" id="btn-ff"    title="Fast-forward 10s"></div>
+    <div class="btn-hit" id="btn-power" title="Power On / Off"></div>
   </div>
 
-  <!-- LAYER 2: Giraffe PNG skin (transparent bg + screen hole) -->
-  <img id="skin" src="TV_Taust.png" alt="" draggable="false" />
-
-  <!-- LAYER 3: Invisible button hit areas -->
-  <div id="btn-rewind" class="btn-hit" title="Rewind 10s"></div>
-  <div id="btn-pause"  class="btn-hit" title="Pause"></div>
-  <div id="btn-power"  class="btn-hit" title="Power"></div>
-  <div id="btn-play"   class="btn-hit" title="Play"></div>
-  <div id="btn-ffwd"   class="btn-hit" title="Fast Forward 10s"></div>
-
-  <!-- LAYER 4: Status badge -->
-  <div id="status">OFF</div>
-
-</div>
+  <div id="toast"></div>
+  <div id="hint">🦒 Drag the TV &nbsp;·&nbsp; Use the buttons below to control playback</div>
 
 <script>
-/* ══════════════════════════════════════════════
-   REFS & STATE
-══════════════════════════════════════════════ */
-const video     = document.getElementById('video');
-const screenOff = document.getElementById('screen-off');
-const statusEl  = document.getElementById('status');
-const toast     = document.getElementById('toast');
-const dragHint  = document.getElementById('drag-hint');
-const widget    = document.getElementById('widget');
+  /* ── Elements ── */
+  const video    = document.getElementById('giraffe-video');
+  const widget   = document.getElementById('tv-widget');
+  const screenOff = document.getElementById('screen-off');
+  let powered    = false;
+  let toastTimer = null;
 
-let powered    = false;
-let toastTimer = null;
+  /* ── Toast ── */
+  function toast(msg, dur = 1500) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), dur);
+  }
 
-/* ══════════════════════════════════════════════
-   TOAST
-══════════════════════════════════════════════ */
-function showToast(msg) {
-  toast.textContent = msg;
-  toast.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('show'), 1900);
-}
+  /* ── Power toggle ── */
+  function setPowered(on) {
+    powered = on;
+    if (on) {
+      video.play().catch(() => {});
+      screenOff.classList.remove('visible');
+      widget.classList.remove('powered-off');
+      toast('📺  ON');
+    } else {
+      video.pause();
+      screenOff.classList.add('visible');
+      widget.classList.add('powered-off');
+      toast('📺  OFF');
+    }
+  }
 
-/* ══════════════════════════════════════════════
-   RIPPLE
-══════════════════════════════════════════════ */
-function spawnRipple(btn) {
-  const dot = document.createElement('div');
-  dot.className = 'ripple-dot';
-  const br = btn.getBoundingClientRect();
-  const wr = widget.getBoundingClientRect();
-  dot.style.left = (br.left + br.width  / 2 - wr.left) + 'px';
-  dot.style.top  = (br.top  + br.height / 2 - wr.top)  + 'px';
-  widget.appendChild(dot);
-  dot.addEventListener('animationend', () => dot.remove());
-}
+  document.getElementById('btn-power').addEventListener('click', e => {
+    e.stopPropagation();
+    setPowered(!powered);
+  });
 
-/* ══════════════════════════════════════════════
-   POWER HELPERS
-══════════════════════════════════════════════ */
-function turnOn() {
-  powered = true;
-  screenOff.classList.add('hidden');
-  statusEl.textContent = 'ON ▶';
-}
-function turnOff() {
-  powered = false;
-  video.pause();
-  video.currentTime = 0;
-  screenOff.classList.remove('hidden');
-  statusEl.textContent = 'OFF';
-}
+  document.getElementById('btn-play').addEventListener('click', e => {
+    e.stopPropagation();
+    if (!powered) { setPowered(true); return; }
+    video.play().catch(() => {});
+    toast('▶  Play');
+  });
 
-/* ══════════════════════════════════════════════
-   BUTTONS
-══════════════════════════════════════════════ */
-document.getElementById('btn-power').addEventListener('click', function(e) {
-  e.stopPropagation();
-  spawnRipple(this);
-  if (!powered) { turnOn(); video.play().catch(()=>{}); showToast('📺  TV ON'); }
-  else          { turnOff(); showToast('📴  TV OFF'); }
-});
+  document.getElementById('btn-pause').addEventListener('click', e => {
+    e.stopPropagation();
+    if (!powered) return;
+    video.pause();
+    toast('⏸  Pause');
+  });
 
-document.getElementById('btn-play').addEventListener('click', function(e) {
-  e.stopPropagation();
-  spawnRipple(this);
-  if (!powered) turnOn();
-  video.play().catch(()=>{});
-  statusEl.textContent = 'ON ▶';
-  showToast('▶  PLAY');
-});
+  document.getElementById('btn-rw').addEventListener('click', e => {
+    e.stopPropagation();
+    if (!powered) return;
+    video.currentTime = Math.max(0, video.currentTime - 10);
+    toast('⏮  −10s');
+  });
 
-document.getElementById('btn-pause').addEventListener('click', function(e) {
-  e.stopPropagation();
-  spawnRipple(this);
-  if (!powered) { showToast('📴  TV is off'); return; }
-  video.pause();
-  statusEl.textContent = 'ON ⏸';
-  showToast('⏸  PAUSE');
-});
+  document.getElementById('btn-ff').addEventListener('click', e => {
+    e.stopPropagation();
+    if (!powered) return;
+    video.currentTime = Math.min(video.duration || Infinity, video.currentTime + 10);
+    toast('⏭  +10s');
+  });
 
-document.getElementById('btn-ffwd').addEventListener('click', function(e) {
-  e.stopPropagation();
-  spawnRipple(this);
-  if (!powered) { showToast('📴  TV is off'); return; }
-  video.currentTime = Math.min(video.currentTime + 10, video.duration || 0);
-  showToast('⏩  +10s');
-});
+  /* ── Drag ── */
+  let dragging = false, ox = 0, oy = 0;
 
-document.getElementById('btn-rewind').addEventListener('click', function(e) {
-  e.stopPropagation();
-  spawnRipple(this);
-  if (!powered) { showToast('📴  TV is off'); return; }
-  video.currentTime = Math.max(video.currentTime - 10, 0);
-  showToast('⏪  −10s');
-});
+  widget.addEventListener('pointerdown', e => {
+    if (e.target.classList.contains('btn-hit')) return;
+    dragging = true;
+    widget.setPointerCapture(e.pointerId);
+    const r = widget.getBoundingClientRect();
+    ox = e.clientX - r.left;
+    oy = e.clientY - r.top;
+    widget.style.transition = 'none';
+    widget.style.cursor = 'grabbing';
+  });
 
-/* ══════════════════════════════════════════════
-   DRAG
-══════════════════════════════════════════════ */
-let dragging = false, ox = 0, oy = 0;
+  window.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    let x = e.clientX - ox;
+    let y = e.clientY - oy;
+    x = Math.max(0, Math.min(window.innerWidth  - widget.offsetWidth,  x));
+    y = Math.max(0, Math.min(window.innerHeight - widget.offsetHeight, y));
+    widget.style.left      = x + 'px';
+    widget.style.top       = y + 'px';
+    widget.style.transform = 'none';
+  });
 
-widget.addEventListener('mousedown', startDrag);
-widget.addEventListener('touchstart', startDragTouch, { passive: false });
+  window.addEventListener('pointerup', () => {
+    dragging = false;
+    widget.style.cursor = 'grab';
+  });
 
-function startDrag(e) {
-  if (e.target.classList.contains('btn-hit')) return;
-  dragging = true;
-  const r = widget.getBoundingClientRect();
-  ox = e.clientX - r.left;
-  oy = e.clientY - r.top;
-  widget.style.transition = 'none';
-  document.addEventListener('mousemove', onDrag);
-  document.addEventListener('mouseup', stopDrag);
-}
-
-function startDragTouch(e) {
-  if (e.target.classList.contains('btn-hit')) return;
-  dragging = true;
-  const t = e.touches[0];
-  const r = widget.getBoundingClientRect();
-  ox = t.clientX - r.left;
-  oy = t.clientY - r.top;
-  widget.style.transition = 'none';
-  document.addEventListener('touchmove', onDragTouch, { passive: false });
-  document.addEventListener('touchend', stopDragTouch);
-}
-
-function moveTo(cx, cy) {
-  hideDragHint();
-  const nx = Math.max(0, Math.min(window.innerWidth  - widget.offsetWidth,  cx - ox));
-  const ny = Math.max(0, Math.min(window.innerHeight - widget.offsetHeight, cy - oy));
-  widget.style.left      = nx + 'px';
-  widget.style.top       = ny + 'px';
-  widget.style.transform = 'none';
-}
-
-function onDrag(e)      { if (dragging) moveTo(e.clientX, e.clientY); }
-function onDragTouch(e) { if (dragging) { e.preventDefault(); moveTo(e.touches[0].clientX, e.touches[0].clientY); } }
-function stopDrag()      { dragging = false; document.removeEventListener('mousemove', onDrag);      document.removeEventListener('mouseup',   stopDrag);      }
-function stopDragTouch() { dragging = false; document.removeEventListener('touchmove', onDragTouch); document.removeEventListener('touchend',  stopDragTouch); }
-
-/* ══════════════════════════════════════════════
-   DRAG HINT — auto-hides after 4s
-══════════════════════════════════════════════ */
-let hintHidden = false;
-function hideDragHint() {
-  if (!hintHidden) { hintHidden = true; dragHint.classList.add('gone'); }
-}
-setTimeout(hideDragHint, 4000);
+  /* ── Init: start powered off ── */
+  screenOff.classList.add('visible');
+  widget.classList.add('powered-off');
 </script>
 </body>
 </html>
