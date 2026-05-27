@@ -1,316 +1,284 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giraffe TV • Retro Widget</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            height: 100vh;
-            background: url('TV_Wallpaper.webp') no-repeat center center fixed;
-            background-size: cover;
-            overflow: hidden;
-            font-family: 'Press Start 2P', system-ui;
-            image-rendering: pixelated;
-        }
-        
-        #tv-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 580px;
-            height: 520px;
-            transform: translate(-50%, -50%);
-            cursor: grab;
-            user-select: none;
-            z-index: 100;
-            filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.75));
-        }
-        
-        #tv-frame {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            background: url('TV_taust.png') no-repeat center center;
-            background-size: contain;
-        }
-        
-        #tv-screen {
-            position: absolute;
-            top: 142px;
-            left: 105px;
-            width: 375px;
-            height: 238px;
-            background: #0a0a0a;
-            border: 14px solid #1f1f1f;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: inset 0 0 45px rgba(0,0,0,0.95),
-                        0 0 20px rgba(0, 255, 80, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            color: #00ff80;
-            text-align: center;
-        }
-        
-        .screen-content {
-            font-size: 18px;
-            text-shadow: 0 0 10px #00ff80;
-            margin-bottom: 20px;
-        }
-        
-        .scanlines {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(
-                transparent 0px,
-                transparent 3px,
-                rgba(0, 255, 120, 0.15) 3px,
-                rgba(0, 255, 120, 0.15) 6px
-            );
-            pointer-events: none;
-            z-index: 5;
-            animation: scan 5s linear infinite;
-        }
-        
-        @keyframes scan {
-            0% { background-position: 0 0; }
-            100% { background-position: 0 800px; }
-        }
-        
-        .vignette {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            box-shadow: inset 0 0 80px rgba(0,0,0,0.85);
-            pointer-events: none;
-            z-index: 6;
-        }
-        
-        #controls-svg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            pointer-events: none;
-        }
-        
-        .control-area {
-            cursor: pointer;
-            pointer-events: auto;
-            transition: filter 0.1s;
-        }
-        
-        .control-area:hover {
-            filter: brightness(1.4);
-        }
-        
-        .control-area:active {
-            transform: scale(0.9);
-        }
-        
-        .status {
-            position: absolute;
-            top: 88px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 20, 0, 0.85);
-            color: #00ff80;
-            padding: 6px 20px;
-            font-size: 14px;
-            border: 3px solid #00ff80;
-            text-shadow: 0 0 10px #00ff80;
-            z-index: 15;
-            white-space: nowrap;
-            letter-spacing: 2px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TV Widget</title>
+
+<style>
+html,
+body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    user-select:none;
+    font-family:Arial, sans-serif;
+}
+
+/* Full wallpaper */
+body{
+    background:url("TV_Wallpaper.jpg") center center / cover no-repeat;
+}
+
+/* Draggable TV */
+#tvWidget{
+    position:absolute;
+    left:120px;
+    top:80px;
+
+    width:520px;
+    height:auto;
+
+    cursor:grab;
+    z-index:10;
+}
+
+#tvWidget.dragging{
+    cursor:grabbing;
+}
+
+/* TV image */
+#tvFrame{
+    width:100%;
+    display:block;
+    pointer-events:none;
+}
+
+/* Screen position inside giraffe TV */
+#screenContainer{
+    position:absolute;
+
+    /* Adjust if needed */
+    left:18%;
+    top:50.8%;
+
+    width:60%;
+    height:24.5%;
+
+    overflow:hidden;
+    border-radius:28px;
+
+    background:black;
+}
+
+/* Video */
+#tvVideo{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    background:black;
+}
+
+/* Overlay for screen off */
+#screenOff{
+    position:absolute;
+    inset:0;
+    background:black;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .3s;
+}
+
+/* Invisible button hit areas */
+.control{
+    position:absolute;
+    z-index:20;
+}
+
+/* Power button near head */
+#powerBtn{
+    top:6%;
+    right:8%;
+    width:9%;
+    height:8%;
+    cursor:pointer;
+}
+
+/* Green buttons area */
+#prevBtn{
+    left:32%;
+    bottom:17%;
+    width:8%;
+    height:5%;
+    cursor:pointer;
+}
+
+#playBtn{
+    left:46%;
+    bottom:17%;
+    width:8%;
+    height:5%;
+    cursor:pointer;
+}
+
+#nextBtn{
+    left:60%;
+    bottom:17%;
+    width:8%;
+    height:5%;
+    cursor:pointer;
+}
+
+/* Optional hover debug */
+.control:hover{
+    background:rgba(0,255,0,0.12);
+}
+</style>
 </head>
 <body>
-    <div id="tv-container">
-        <div id="tv-frame">
-            <!-- TV Screen (No YouTube) -->
-            <div id="tv-screen">
-                <div class="screen-content">
-                    GIRRAFFE TV<br>
-                    READY
-                </div>
-                <div class="scanlines"></div>
-                <div class="vignette"></div>
-            </div>
-            
-            <!-- Status -->
-            <div class="status" id="status">STANDBY</div>
-            
-            <!-- SVG Controls -->
-            <svg id="controls-svg" width="580" height="520" viewBox="0 0 511 547" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Power Button -->
-                <rect x="235" y="415" width="48" height="48" fill="transparent" class="control-area" id="btn-power"/>
-                
-                <!-- Rewind -->
-                <rect x="165" y="415" width="48" height="48" fill="transparent" class="control-area" id="btn-rewind"/>
-                
-                <!-- Pause -->
-                <rect x="215" y="415" width="48" height="48" fill="transparent" class="control-area" id="btn-pause"/>
-                
-                <!-- Play -->
-                <rect x="275" y="415" width="48" height="48" fill="transparent" class="control-area" id="btn-play"/>
-                
-                <!-- Fast Forward -->
-                <rect x="335" y="415" width="48" height="48" fill="transparent" class="control-area" id="btn-ff"/>
-            </svg>
-        </div>
+
+<div id="tvWidget">
+
+    <!-- Video screen -->
+    <div id="screenContainer">
+
+        <video
+            id="tvVideo"
+            autoplay
+            loop
+            muted
+            playsinline
+        >
+            <source src="video.mp4" type="video/mp4">
+        </video>
+
+        <div id="screenOff"></div>
     </div>
 
-    <script>
-        // Draggable functionality
-        const container = document.getElementById('tv-container');
-        let isDragging = false;
-        let currentX = 0, currentY = 0;
-        let initialX = 0, initialY = 0;
-        
-        function dragStart(e) {
-            if (e.target.closest('#tv-screen') || e.target.closest('.control-area')) return;
-            
-            initialX = e.clientX - currentX;
-            initialY = e.clientY - currentY;
-            isDragging = true;
-            container.style.cursor = 'grabbing';
-        }
-        
-        function drag(e) {
-            if (!isDragging) return;
-            e.preventDefault();
-            currentX = e.clientX - initialX;
-            currentY = e.clientY - initialY;
-            container.style.transform = `translate(${currentX}px, ${currentY}px)`;
-        }
-        
-        function dragEnd() {
-            isDragging = false;
-            container.style.cursor = 'grab';
-        }
-        
-        // Controls
-        function setupControls() {
-            const btnPower = document.getElementById('btn-power');
-            const btnPlay = document.getElementById('btn-play');
-            const btnPause = document.getElementById('btn-pause');
-            const btnFF = document.getElementById('btn-ff');
-            const btnRewind = document.getElementById('btn-rewind');
-            
-            let powered = true;
-            
-            btnPower.addEventListener('click', () => {
-                powered = !powered;
-                const statusEl = document.getElementById('status');
-                if (!powered) {
-                    statusEl.textContent = "POWER OFF";
-                } else {
-                    statusEl.textContent = "STANDBY";
-                }
-            });
-            
-            btnPlay.addEventListener('click', () => {
-                if (powered) {
-                    document.getElementById('status').textContent = "PLAYING";
-                }
-            });
-            
-            btnPause.addEventListener('click', () => {
-                if (powered) {
-                    document.getElementById('status').textContent = "PAUSED";
-                }
-            });
-            
-            btnFF.addEventListener('click', () => {
-                if (powered) {
-                    document.getElementById('status').textContent = "FAST FORWARD";
-                    setTimeout(() => {
-                        document.getElementById('status').textContent = "PLAYING";
-                    }, 800);
-                }
-            });
-            
-            btnRewind.addEventListener('click', () => {
-                if (powered) {
-                    document.getElementById('status').textContent = "REWINDING";
-                    setTimeout(() => {
-                        document.getElementById('status').textContent = "PLAYING";
-                    }, 800);
-                }
-            });
-        }
-        
-        function init() {
-            // Drag
-            container.addEventListener('mousedown', dragStart);
-            document.addEventListener('mousemove', drag);
-            document.addEventListener('mouseup', dragEnd);
-            
-            // Touch support
-            container.addEventListener('touchstart', (e) => {
-                if (e.target.closest('#tv-screen') || e.target.closest('.control-area')) return;
-                const touch = e.touches[0];
-                initialX = touch.clientX - currentX;
-                initialY = touch.clientY - currentY;
-                isDragging = true;
-            });
-            
-            document.addEventListener('touchmove', (e) => {
-                if (!isDragging) return;
-                const touch = e.touches[0];
-                currentX = touch.clientX - initialX;
-                currentY = touch.clientY - initialY;
-                container.style.transform = `translate(${currentX}px, ${currentY}px)`;
-            });
-            
-            document.addEventListener('touchend', () => isDragging = false);
-            
-            setupControls();
-            
-            // Keyboard shortcuts
-            document.addEventListener('keydown', (e) => {
-                const statusEl = document.getElementById('status');
-                switch(e.key) {
-                    case ' ': 
-                        e.preventDefault();
-                        statusEl.textContent = "PLAYING";
-                        break;
-                    case 'p':
-                    case 'P':
-                        statusEl.textContent = "PAUSED";
-                        break;
-                    case 'ArrowRight': 
-                        statusEl.textContent = "FAST FORWARD";
-                        setTimeout(() => statusEl.textContent = "PLAYING", 600);
-                        break;
-                    case 'ArrowLeft': 
-                        statusEl.textContent = "REWINDING";
-                        setTimeout(() => statusEl.textContent = "PLAYING", 600);
-                        break;
-                }
-            });
-        }
-        
-        window.onload = init;
-    </script>
+    <!-- TV artwork -->
+    <img id="tvFrame" src="TV_Taust.png" alt="TV">
+
+    <!-- Invisible controls -->
+    <div id="powerBtn" class="control" title="Power"></div>
+
+    <div id="prevBtn" class="control" title="Previous"></div>
+    <div id="playBtn" class="control" title="Play/Pause"></div>
+    <div id="nextBtn" class="control" title="Next"></div>
+
+</div>
+
+<script>
+const tvWidget = document.getElementById("tvWidget");
+const video = document.getElementById("tvVideo");
+const screenOff = document.getElementById("screenOff");
+
+let screenEnabled = true;
+
+/* -------------------------
+   DRAGGING
+------------------------- */
+
+let dragging = false;
+let startX = 0;
+let startY = 0;
+let offsetX = 0;
+let offsetY = 0;
+
+tvWidget.addEventListener("pointerdown", (e)=>{
+
+    const clickedControl = e.target.classList.contains("control");
+
+    if(clickedControl) return;
+
+    dragging = true;
+    tvWidget.classList.add("dragging");
+
+    startX = e.clientX;
+    startY = e.clientY;
+
+    offsetX = tvWidget.offsetLeft;
+    offsetY = tvWidget.offsetTop;
+
+    tvWidget.setPointerCapture(e.pointerId);
+});
+
+window.addEventListener("pointermove",(e)=>{
+
+    if(!dragging) return;
+
+    tvWidget.style.left =
+        offsetX + (e.clientX - startX) + "px";
+
+    tvWidget.style.top =
+        offsetY + (e.clientY - startY) + "px";
+});
+
+window.addEventListener("pointerup",()=>{
+
+    dragging = false;
+    tvWidget.classList.remove("dragging");
+});
+
+/* -------------------------
+   PLAY / PAUSE
+------------------------- */
+
+document
+.getElementById("playBtn")
+.addEventListener("click",()=>{
+
+    if(video.paused){
+        video.play();
+    }else{
+        video.pause();
+    }
+});
+
+/* -------------------------
+   REWIND
+------------------------- */
+
+document
+.getElementById("prevBtn")
+.addEventListener("click",()=>{
+
+    video.currentTime =
+        Math.max(0, video.currentTime - 10);
+});
+
+/* -------------------------
+   FORWARD
+------------------------- */
+
+document
+.getElementById("nextBtn")
+.addEventListener("click",()=>{
+
+    video.currentTime =
+        Math.min(
+            video.duration || Infinity,
+            video.currentTime + 10
+        );
+});
+
+/* -------------------------
+   POWER BUTTON
+------------------------- */
+
+document
+.getElementById("powerBtn")
+.addEventListener("click",()=>{
+
+    screenEnabled = !screenEnabled;
+
+    if(screenEnabled){
+
+        screenOff.style.opacity = "0";
+        video.muted = false;
+        video.play();
+
+    }else{
+
+        screenOff.style.opacity = "1";
+        video.pause();
+    }
+});
+
+/* Start muted to satisfy browser autoplay */
+video.play().catch(()=>{});
+</script>
+
 </body>
 </html>
