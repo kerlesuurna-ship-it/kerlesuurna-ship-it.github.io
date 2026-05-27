@@ -1,284 +1,474 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Giraffe TV</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-<title>TV Widget</title>
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Georgia', serif;
+      background: #1a1a1a;
+    }
 
-<style>
-html,
-body{
-    margin:0;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    user-select:none;
-    font-family:Arial, sans-serif;
-}
+    /* ── Full-page background ── */
+    #bg {
+      position: fixed;
+      inset: 0;
+      background: url('TV_Wallpaper.jpg') center/cover no-repeat;
+      z-index: 0;
+    }
 
-/* Full wallpaper */
-body{
-    background:url("TV_Wallpaper.jpg") center center / cover no-repeat;
-}
+    /* ── Floating draggable widget ── */
+    #widget {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 420px;
+      /* keep aspect ratio of the PNG (511 × 547) */
+      aspect-ratio: 511 / 547;
+      z-index: 10;
+      user-select: none;
+      cursor: grab;
+      filter: drop-shadow(0 20px 60px rgba(0,0,0,0.6));
+      transition: filter 0.2s;
+    }
+    #widget:active { cursor: grabbing; filter: drop-shadow(0 28px 80px rgba(0,0,0,0.8)); }
 
-/* Draggable TV */
-#tvWidget{
-    position:absolute;
-    left:120px;
-    top:80px;
+    /* ── Giraffe PNG skin ── */
+    #skin {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+    }
 
-    width:520px;
-    height:auto;
+    /* ── Video element clipped to the screen rectangle ── */
+    /*
+      SVG viewBox: 0 0 511 547
+      Screen rect in SVG coords: x=112.5 y=248.3 w=266.2 h=161.4
+      As percentages of 511×547:
+        left  = 112.5/511  = 22.01%
+        top   = 248.3/547  = 45.39%
+        width = 266.2/511  = 52.09%
+        height= 161.4/547  = 29.50%
+    */
+    #screen-wrapper {
+      position: absolute;
+      left: 22.01%;
+      top: 45.39%;
+      width: 52.09%;
+      height: 29.50%;
+      z-index: 1;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #000;
+    }
 
-    cursor:grab;
-    z-index:10;
-}
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
 
-#tvWidget.dragging{
-    cursor:grabbing;
-}
+    /* Off-state overlay */
+    #screen-off {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, #1a1a2e 0%, #000 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s;
+    }
+    #screen-off.visible { opacity: 1; pointer-events: auto; }
+    #screen-off svg { width: 40%; opacity: 0.3; }
 
-/* TV image */
-#tvFrame{
-    width:100%;
-    display:block;
-    pointer-events:none;
-}
+    /* ── Invisible hit-areas mapped over SVG button positions ── */
+    /*
+      Button centres in SVG coords (viewBox 511×547):
 
-/* Screen position inside giraffe TV */
-#screenContainer{
-    position:absolute;
+      REWIND    centre ~161, 422   → 31.5%, 77.1%    size ~22×18px → 4.3%×3.3%
+      PAUSE     centre ~218, 431   → 42.7%, 78.8%    size ~16×14px → 3.1%×2.6%
+      POWER     centre ~249, 429   → 48.7%, 78.4%    size ~16×16px → 3.1%×2.9%
+      PLAY      centre ~281, 431   → 55.0%, 78.8%    size ~16×14px → 3.1%×2.6%
+      FFWD      centre ~343, 422   → 67.1%, 77.1%    size ~22×18px → 4.3%×3.3%
 
-    /* Adjust if needed */
-    left:18%;
-    top:50.8%;
+      We make the hit areas generously larger for usability.
+    */
+    .btn-hit {
+      position: absolute;
+      z-index: 5;
+      cursor: pointer;
+      border-radius: 50%;
+      /* debug: uncomment to visualise */
+      /* background: rgba(255,0,0,0.3); */
+    }
 
-    width:60%;
-    height:24.5%;
+    #btn-rewind {
+      left: 28%;
+      top:  73%;
+      width: 10%;
+      height: 8%;
+    }
+    #btn-pause {
+      left: 39%;
+      top:  75%;
+      width: 9%;
+      height: 8%;
+    }
+    #btn-power {
+      left: 45.5%;
+      top:  75%;
+      width: 9%;
+      height: 8%;
+    }
+    #btn-play {
+      left: 52%;
+      top:  75%;
+      width: 9%;
+      height: 8%;
+    }
+    #btn-ffwd {
+      left: 62%;
+      top:  73%;
+      width: 10%;
+      height: 8%;
+    }
 
-    overflow:hidden;
-    border-radius:28px;
+    /* ── Button press ripple ── */
+    @keyframes ripple {
+      0%   { transform: translate(-50%,-50%) scale(0);   opacity: .6; }
+      100% { transform: translate(-50%,-50%) scale(2.5); opacity: 0;  }
+    }
+    .ripple-dot {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      pointer-events: none;
+      animation: ripple 0.4s ease-out forwards;
+      z-index: 20;
+    }
 
-    background:black;
-}
+    /* ── Tooltip ── */
+    #tooltip {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      letter-spacing: 0.08em;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 100;
+      backdrop-filter: blur(6px);
+    }
+    #tooltip.show { opacity: 1; }
 
-/* Video */
-#tvVideo{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    background:black;
-}
+    /* ── Status badge ── */
+    #status {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      font-size: 9px;
+      font-family: 'Courier New', monospace;
+      color: rgba(255,255,255,0.7);
+      background: rgba(0,0,0,0.45);
+      padding: 2px 7px;
+      border-radius: 8px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      z-index: 6;
+      pointer-events: none;
+    }
 
-/* Overlay for screen off */
-#screenOff{
-    position:absolute;
-    inset:0;
-    background:black;
-    opacity:0;
-    pointer-events:none;
-    transition:opacity .3s;
-}
-
-/* Invisible button hit areas */
-.control{
-    position:absolute;
-    z-index:20;
-}
-
-/* Power button near head */
-#powerBtn{
-    top:6%;
-    right:8%;
-    width:9%;
-    height:8%;
-    cursor:pointer;
-}
-
-/* Green buttons area */
-#prevBtn{
-    left:32%;
-    bottom:17%;
-    width:8%;
-    height:5%;
-    cursor:pointer;
-}
-
-#playBtn{
-    left:46%;
-    bottom:17%;
-    width:8%;
-    height:5%;
-    cursor:pointer;
-}
-
-#nextBtn{
-    left:60%;
-    bottom:17%;
-    width:8%;
-    height:5%;
-    cursor:pointer;
-}
-
-/* Optional hover debug */
-.control:hover{
-    background:rgba(0,255,0,0.12);
-}
-</style>
+    /* ── Drag hint ── */
+    #drag-hint {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.55);
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      pointer-events: none;
+      z-index: 50;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+      transition: opacity 1s;
+    }
+    #drag-hint.hidden { opacity: 0; }
+  </style>
 </head>
 <body>
 
-<div id="tvWidget">
+<!-- Background -->
+<div id="bg"></div>
 
-    <!-- Video screen -->
-    <div id="screenContainer">
+<!-- Drag hint -->
+<div id="drag-hint">☞ DRAG THE GIRAFFE</div>
 
-        <video
-            id="tvVideo"
-            autoplay
-            loop
-            muted
-            playsinline
-        >
-            <source src="video.mp4" type="video/mp4">
-        </video>
+<!-- Tooltip -->
+<div id="tooltip"></div>
 
-        <div id="screenOff"></div>
+<!-- Widget -->
+<div id="widget">
+
+  <!-- Status badge -->
+  <div id="status">OFF</div>
+
+  <!-- Video screen -->
+  <div id="screen-wrapper">
+    <video id="video" src="Giraffe_4k_Video__1_.mp4" loop playsinline preload="metadata"></video>
+    <div id="screen-off" class="visible">
+      <!-- simple power icon -->
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 20 V50" stroke="#aaa" stroke-width="6" stroke-linecap="round"/>
+        <path d="M35 28 A28 28 0 1 0 65 28" stroke="#aaa" stroke-width="6" stroke-linecap="round" fill="none"/>
+      </svg>
     </div>
+  </div>
 
-    <!-- TV artwork -->
-    <img id="tvFrame" src="TV_Taust.png" alt="TV">
+  <!-- Giraffe PNG on top -->
+  <img id="skin" src="TV_Taust.png" alt="Giraffe TV" draggable="false" />
 
-    <!-- Invisible controls -->
-    <div id="powerBtn" class="control" title="Power"></div>
-
-    <div id="prevBtn" class="control" title="Previous"></div>
-    <div id="playBtn" class="control" title="Play/Pause"></div>
-    <div id="nextBtn" class="control" title="Next"></div>
+  <!-- Hit areas -->
+  <div id="btn-rewind" class="btn-hit" title="Rewind"></div>
+  <div id="btn-pause"  class="btn-hit" title="Pause"></div>
+  <div id="btn-power"  class="btn-hit" title="Power"></div>
+  <div id="btn-play"   class="btn-hit" title="Play"></div>
+  <div id="btn-ffwd"   class="btn-hit" title="Fast Forward"></div>
 
 </div>
 
 <script>
-const tvWidget = document.getElementById("tvWidget");
-const video = document.getElementById("tvVideo");
-const screenOff = document.getElementById("screenOff");
+  /* ════════════════════════════════════════
+     STATE
+  ════════════════════════════════════════ */
+  const video      = document.getElementById('video');
+  const screenOff  = document.getElementById('screen-off');
+  const statusEl   = document.getElementById('status');
+  const tooltip    = document.getElementById('tooltip');
+  const dragHint   = document.getElementById('drag-hint');
+  const widget     = document.getElementById('widget');
 
-let screenEnabled = true;
+  let powered = false;
+  let tooltipTimer = null;
 
-/* -------------------------
-   DRAGGING
-------------------------- */
+  /* ════════════════════════════════════════
+     TOOLTIP
+  ════════════════════════════════════════ */
+  function showTooltip(msg) {
+    tooltip.textContent = msg;
+    tooltip.classList.add('show');
+    clearTimeout(tooltipTimer);
+    tooltipTimer = setTimeout(() => tooltip.classList.remove('show'), 1800);
+  }
 
-let dragging = false;
-let startX = 0;
-let startY = 0;
-let offsetX = 0;
-let offsetY = 0;
+  /* ════════════════════════════════════════
+     RIPPLE
+  ════════════════════════════════════════ */
+  function spawnRipple(btn) {
+    const dot = document.createElement('div');
+    dot.className = 'ripple-dot';
+    const r = btn.getBoundingClientRect();
+    const wr = widget.getBoundingClientRect();
+    dot.style.left = (r.left + r.width/2  - wr.left) + 'px';
+    dot.style.top  = (r.top  + r.height/2 - wr.top)  + 'px';
+    widget.appendChild(dot);
+    dot.addEventListener('animationend', () => dot.remove());
+  }
 
-tvWidget.addEventListener("pointerdown", (e)=>{
+  /* ════════════════════════════════════════
+     STATUS BADGE
+  ════════════════════════════════════════ */
+  function updateStatus(text) {
+    statusEl.textContent = text;
+  }
 
-    const clickedControl = e.target.classList.contains("control");
+  /* ════════════════════════════════════════
+     POWER
+  ════════════════════════════════════════ */
+  document.getElementById('btn-power').addEventListener('click', function(e) {
+    e.stopPropagation();
+    spawnRipple(this);
+    if (!powered) {
+      powered = true;
+      screenOff.classList.remove('visible');
+      video.play().catch(()=>{});
+      updateStatus('ON ▶');
+      showTooltip('📺  TV ON');
+    } else {
+      powered = false;
+      video.pause();
+      video.currentTime = 0;
+      screenOff.classList.add('visible');
+      updateStatus('OFF');
+      showTooltip('📴  TV OFF');
+    }
+  });
 
-    if(clickedControl) return;
+  /* ════════════════════════════════════════
+     PLAY
+  ════════════════════════════════════════ */
+  document.getElementById('btn-play').addEventListener('click', function(e) {
+    e.stopPropagation();
+    spawnRipple(this);
+    if (!powered) {
+      powered = true;
+      screenOff.classList.remove('visible');
+      updateStatus('ON ▶');
+      showTooltip('▶  PLAY');
+    } else {
+      showTooltip('▶  PLAY');
+      updateStatus('ON ▶');
+    }
+    video.play().catch(()=>{});
+  });
 
+  /* ════════════════════════════════════════
+     PAUSE
+  ════════════════════════════════════════ */
+  document.getElementById('btn-pause').addEventListener('click', function(e) {
+    e.stopPropagation();
+    spawnRipple(this);
+    if (powered) {
+      video.pause();
+      updateStatus('ON ⏸');
+      showTooltip('⏸  PAUSE');
+    } else {
+      showTooltip('📴  TV is off');
+    }
+  });
+
+  /* ════════════════════════════════════════
+     FAST FORWARD (+10 s)
+  ════════════════════════════════════════ */
+  document.getElementById('btn-ffwd').addEventListener('click', function(e) {
+    e.stopPropagation();
+    spawnRipple(this);
+    if (powered) {
+      video.currentTime = Math.min(video.currentTime + 10, video.duration || 0);
+      showTooltip('⏩  +10s');
+    } else {
+      showTooltip('📴  TV is off');
+    }
+  });
+
+  /* ════════════════════════════════════════
+     REWIND (-10 s)
+  ════════════════════════════════════════ */
+  document.getElementById('btn-rewind').addEventListener('click', function(e) {
+    e.stopPropagation();
+    spawnRipple(this);
+    if (powered) {
+      video.currentTime = Math.max(video.currentTime - 10, 0);
+      showTooltip('⏪  -10s');
+    } else {
+      showTooltip('📴  TV is off');
+    }
+  });
+
+  /* ════════════════════════════════════════
+     DRAG
+  ════════════════════════════════════════ */
+  let dragging = false;
+  let dragOX = 0, dragOY = 0;
+  let hasDragged = false;
+
+  widget.addEventListener('mousedown', startDrag);
+  widget.addEventListener('touchstart', startDragTouch, { passive: false });
+
+  function startDrag(e) {
+    if (e.target.classList.contains('btn-hit')) return;
     dragging = true;
-    tvWidget.classList.add("dragging");
+    const r = widget.getBoundingClientRect();
+    dragOX = e.clientX - r.left;
+    dragOY = e.clientY - r.top;
+    widget.style.transition = 'none';
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', stopDrag);
+  }
 
-    startX = e.clientX;
-    startY = e.clientY;
+  function startDragTouch(e) {
+    if (e.target.classList.contains('btn-hit')) return;
+    dragging = true;
+    const touch = e.touches[0];
+    const r = widget.getBoundingClientRect();
+    dragOX = touch.clientX - r.left;
+    dragOY = touch.clientY - r.top;
+    widget.style.transition = 'none';
+    document.addEventListener('touchmove', onDragTouch, { passive: false });
+    document.addEventListener('touchend', stopDragTouch);
+  }
 
-    offsetX = tvWidget.offsetLeft;
-    offsetY = tvWidget.offsetTop;
+  function onDrag(e) {
+    if (!dragging) return;
+    moveTo(e.clientX, e.clientY);
+  }
 
-    tvWidget.setPointerCapture(e.pointerId);
-});
+  function onDragTouch(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    moveTo(touch.clientX, touch.clientY);
+  }
 
-window.addEventListener("pointermove",(e)=>{
+  function moveTo(cx, cy) {
+    hasDragged = true;
+    hideDragHint();
+    const w = widget.offsetWidth;
+    const h = widget.offsetHeight;
+    let nx = cx - dragOX;
+    let ny = cy - dragOY;
+    // clamp to viewport
+    nx = Math.max(0, Math.min(window.innerWidth  - w, nx));
+    ny = Math.max(0, Math.min(window.innerHeight - h, ny));
+    widget.style.left      = nx + 'px';
+    widget.style.top       = ny + 'px';
+    widget.style.transform = 'none';
+  }
 
-    if(!dragging) return;
-
-    tvWidget.style.left =
-        offsetX + (e.clientX - startX) + "px";
-
-    tvWidget.style.top =
-        offsetY + (e.clientY - startY) + "px";
-});
-
-window.addEventListener("pointerup",()=>{
-
+  function stopDrag() {
     dragging = false;
-    tvWidget.classList.remove("dragging");
-});
+    document.removeEventListener('mousemove', onDrag);
+    document.removeEventListener('mouseup',   stopDrag);
+  }
 
-/* -------------------------
-   PLAY / PAUSE
-------------------------- */
+  function stopDragTouch() {
+    dragging = false;
+    document.removeEventListener('touchmove', onDragTouch);
+    document.removeEventListener('touchend',  stopDragTouch);
+  }
 
-document
-.getElementById("playBtn")
-.addEventListener("click",()=>{
+  /* ════════════════════════════════════════
+     DRAG HINT
+  ════════════════════════════════════════ */
+  function hideDragHint() {
+    dragHint.classList.add('hidden');
+  }
+  // hide hint after 4 s automatically
+  setTimeout(hideDragHint, 4000);
 
-    if(video.paused){
-        video.play();
-    }else{
-        video.pause();
-    }
-});
-
-/* -------------------------
-   REWIND
-------------------------- */
-
-document
-.getElementById("prevBtn")
-.addEventListener("click",()=>{
-
-    video.currentTime =
-        Math.max(0, video.currentTime - 10);
-});
-
-/* -------------------------
-   FORWARD
-------------------------- */
-
-document
-.getElementById("nextBtn")
-.addEventListener("click",()=>{
-
-    video.currentTime =
-        Math.min(
-            video.duration || Infinity,
-            video.currentTime + 10
-        );
-});
-
-/* -------------------------
-   POWER BUTTON
-------------------------- */
-
-document
-.getElementById("powerBtn")
-.addEventListener("click",()=>{
-
-    screenEnabled = !screenEnabled;
-
-    if(screenEnabled){
-
-        screenOff.style.opacity = "0";
-        video.muted = false;
-        video.play();
-
-    }else{
-
-        screenOff.style.opacity = "1";
-        video.pause();
-    }
-});
-
-/* Start muted to satisfy browser autoplay */
-video.play().catch(()=>{});
 </script>
-
 </body>
 </html>
