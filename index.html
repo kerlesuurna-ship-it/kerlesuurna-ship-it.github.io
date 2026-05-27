@@ -54,19 +54,19 @@
   /*
     Video screen:
     SVG viewBox = 511 x 547
-    Screen rect from SVG: x=112.5, y=248.3, w=266.2, h=161.4
-    As % of viewBox:
-      left   = 112.5 / 511 = 22.01%
-      top    = 248.3 / 547 = 45.39%
-      width  = 266.2 / 511 = 52.09%
-      height = 161.4 / 547 = 29.50%
+    Screen rect from SVG (st1): x=112.5, y=248.3, w=266.2, h=161.4
+    Bottom capped at y=405 (before button decorations at y~415) to keep buttons visible.
+      left   = 112.5 / 511 = 22.016%
+      top    = 248.3 / 547 = 45.393%
+      width  = 266.2 / 511 = 52.094%
+      height = (405-248.3) / 547 = 28.647%
   */
   #screen-wrap {
     position: absolute;
-    left:   22.01%;
-    top:    45.39%;
-    width:  52.09%;
-    height: 29.50%;
+    left:   22.016%;
+    top:    45.393%;
+    width:  52.094%;
+    height: 28.647%;
     overflow: hidden;
     border-radius: 8px;
     background: #000;
@@ -95,8 +95,8 @@
   #screen-off svg { width: 28px; opacity: 0.2; }
 
   /*
-    Button hit areas — invisible circles placed using the same
-    SVG coordinate percentages.
+    Button hit areas — clickable divs positioned using SVG coordinate percentages.
+    Each contains the actual icon SVG cropped to that icon's bounding box.
     Button centres in SVG coords (viewBox 511×547):
       Power  : (249, 428)
       Pause  : (218, 431)
@@ -111,27 +111,25 @@
     border-radius: 50%;
     cursor: pointer;
     pointer-events: auto;
-    /* transform centres the hitbox on the coordinate point */
     transform: translate(-50%, -50%);
-  }
-  /* Each button's top/left is the SVG coord as % of 511/547 */
-  #btn-power  { left: calc(249/511*100%); top: calc(428/547*100%); }
-  #btn-pause  { left: calc(218/511*100%); top: calc(431/547*100%); }
-  #btn-play   { left: calc(281/511*100%); top: calc(430/547*100%); }
-  #btn-rw     { left: calc(161/511*100%); top: calc(422/547*100%); }
-  #btn-ff     { left: calc(343/511*100%); top: calc(422/547*100%); }
-
-  /* Hover glow */
-  .btn::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: rgba(255,255,200,0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: background 0.15s;
   }
-  .btn:hover::after  { background: rgba(255,255,200,0.20); }
-  .btn:active::after { background: rgba(255,255,200,0.40); }
+  .btn svg {
+    width: 60%;
+    height: 60%;
+    pointer-events: none;
+  }
+  .btn:hover  { background: rgba(255,255,200,0.22); }
+  .btn:active { background: rgba(255,255,200,0.42); }
+
+  #btn-power  { left: 48.728%; top: 78.245%; }
+  #btn-pause  { left: 42.661%; top: 78.793%; }
+  #btn-play   { left: 54.990%; top: 78.611%; }
+  #btn-rw     { left: 31.507%; top: 77.148%; }
+  #btn-ff     { left: 67.123%; top: 77.148%; }
 
   /* ── Toast ── */
   #toast {
@@ -289,12 +287,43 @@
     </g>
   </svg>
 
-  <!-- 4) Invisible click buttons over each icon (pointer-events on top) -->
-  <div class="btn" id="btn-power"  title="Power"></div>
-  <div class="btn" id="btn-pause"  title="Pause"></div>
-  <div class="btn" id="btn-play"   title="Play"></div>
-  <div class="btn" id="btn-rw"     title="Rewind 10s"></div>
-  <div class="btn" id="btn-ff"     title="Fast-forward 10s"></div>
+  <!-- 4) Clickable buttons with SVG icons extracted from TV_Layout.svg -->
+
+  <!-- POWER: centre (249,428) in SVG 511×547 -->
+  <div class="btn" id="btn-power" title="Power">
+    <svg viewBox="243 415 13 23" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#010101" d="M248.7,428.4c0,.4.3.7.7.7s.7-.3.7-.7h0v-4.5c0-.4-.3-.7-.7-.7s-.7.3-.7.7v4.5Z"/>
+      <path fill="#010101" d="M244.2,428.7c-.4,2.9,1.6,5.5,4.5,6,1.6.2,3.3-.3,4.5-1.5,1.2-1.2,1.7-2.8,1.5-4.5-.2-1.7-1.3-3.1-2.8-3.9-.3-.2-.8-.2-1,.1-.2.3-.2.8.1,1,0,0,.1,0,.2,0,1.1.6,1.9,1.7,2,2.9.2,1.2-.2,2.4-1.1,3.2-1.5,1.5-3.9,1.5-5.4,0-.9-.8-1.3-2.1-1.1-3.2.2-1.2.9-2.3,2-2.9.3-.2.4-.7.1-1-.2-.3-.5-.4-.8-.2-1.5.8-2.5,2.3-2.8,3.9Z"/>
+    </svg>
+  </div>
+
+  <!-- PAUSE: centre (218,431) -->
+  <div class="btn" id="btn-pause" title="Pause">
+    <svg viewBox="214 427 9 9" xmlns="http://www.w3.org/2000/svg">
+      <path fill-rule="evenodd" fill="#010101" d="M215.4,429.1c0-.1,0-.2.2-.2h1.4c.1,0,.2,0,.2.2v5.7c0,.1,0,.2-.2.2h-1.4c-.1,0-.2,0-.2-.2v-5.7ZM215.6,428.2c-.5,0-.9.4-.9.9v5.7c0,.5.4.9.9.9h1.4c.5,0,.9-.4.9-.9v-5.7c0-.5-.4-.9-.9-.9h-1.4ZM219.6,429.1c0-.1,0-.2.2-.2h1.4c.1,0,.2,0,.2.2v5.7c0,.1,0,.2-.2.2h-1.4c-.1,0-.2,0-.2-.2v-5.7ZM219.8,428.2c-.5,0-.9.4-.9.9v5.7c0,.5.4.9.9.9h1.4c.5,0,.9-.4.9-.9v-5.7c0-.5-.4-.9-.9-.9h-1.4Z"/>
+    </svg>
+  </div>
+
+  <!-- PLAY: centre (281,430) -->
+  <div class="btn" id="btn-play" title="Play">
+    <svg viewBox="277 426 9 9" xmlns="http://www.w3.org/2000/svg">
+      <path fill-rule="evenodd" fill="#010101" d="M278.1,427.4c.2,0,.4-.1.6-.1s.4,0,.6.1c0,0,0,0,0,0l5.2,2.8c.2,0,.3.2.4.3.1.1.2.3.2.5s0,.3-.2.5c-.1.1-.2.3-.4.3l-5.2,2.8s0,0,0,0c-.2,0-.4.1-.6.1s-.4,0-.6-.1c-.2,0-.3-.2-.4-.3-.1-.1-.2-.3-.2-.5h0s0-5.6,0-5.6c0-.2,0-.3.2-.5.1-.1.3-.3.4-.3ZM278.7,428c0,0-.1,0-.2,0,0,0,0,0,0,0,0,0,0,0-.1,0,0,0,0,0,0,.1v5.6s0,0,0,.1c0,0,0,0,.1,0,0,0,0,0,0,0,0,0,.1,0,.2,0s.1,0,.2,0l5.2-2.8s0,0,0,0c0,0,0,0,.1,0,0,0,0,0,0-.1s0,0,0-.1c0,0,0,0-.1,0,0,0,0,0,0,0l-5.2-2.8s-.1,0-.2,0Z"/>
+    </svg>
+  </div>
+
+  <!-- REWIND: centre (161,422) -->
+  <div class="btn" id="btn-rw" title="Rewind 10s">
+    <svg viewBox="155 414 14 14" xmlns="http://www.w3.org/2000/svg">
+      <path fill-rule="evenodd" fill="#010101" d="M165.7,418.2c0-.1,0-.2-.2-.3-.1,0-.2,0-.3,0l-3.3,3.8c0,0,0,.1,0,.2h0c0,0,0,.2,0,.2l3.3,3.8c0,.1.2.1.3,0,.1,0,.2-.2.2-.3v-7.7ZM161.9,423.7l2.7,3.1c.7.9,2.1.3,2.1-1v-7.7c0-1.3-1.3-1.8-2.1-1l-2.7,3.1v-2.2c0-1.3-1.3-1.8-2.1-1l-3.3,3.8c-.5.5-.5,1.4,0,1.9l3.3,3.8c.7.9,2.1.3,2.1-1,0,0,0-2.2,0-2.2ZM160.9,422v3.8c0,.1,0,.2-.2.3-.1,0-.2,0-.3,0l-3.3-3.8c0-.1,0-.3,0-.4l3.3-3.8c0-.1.2-.1.3,0,.1,0,.2.2.2.3v3.8s0,0,0,0Z"/>
+    </svg>
+  </div>
+
+  <!-- FF: centre (343,422) -->
+  <div class="btn" id="btn-ff" title="Fast-forward 10s">
+    <svg viewBox="337 414 14 14" xmlns="http://www.w3.org/2000/svg">
+      <path fill-rule="evenodd" fill="#010101" d="M339,418.6c0-.1,0-.2.2-.3.1,0,.2,0,.3,0l3.3,3.8c0,0,0,.1,0,.2h0c0,0,0,.2,0,.2l-3.3,3.8c0,.1-.2.1-.3,0-.1,0-.2-.2-.2-.3v-7.7ZM342.8,424.1l-2.7,3.1c-.7.9-2.1.3-2.1-1v-7.7c0-1.3,1.3-1.8,2.1-1l2.7,3.1v-2.2c0-1.3,1.3-1.8,2.1-1l3.3,3.8c.5.5.5,1.4,0,1.9l-3.3,3.8c-.7.9-2.1.3-2.1-1,0,0,0-2.2,0-2.2ZM343.8,422.4v3.8c0,.1,0,.2.2.3.1,0,.2,0,.3,0l3.3-3.8c0-.1,0-.3,0-.4l-3.3-3.8c0-.1-.2-.1-.3,0-.1,0-.2.2-.2.3v3.8s0,0,0,0Z"/>
+    </svg>
+  </div>
 
 </div><!-- #tv-widget -->
 
@@ -321,12 +350,14 @@
     if (on) {
       widget.classList.remove('off');
       screenOff.classList.add('hidden');
+      video.currentTime = 0;
       video.play().catch(()=>{});
       showToast('📺  ON');
     } else {
       widget.classList.add('off');
       screenOff.classList.remove('hidden');
       video.pause();
+      video.currentTime = 0;
       showToast('📺  OFF');
     }
   }
