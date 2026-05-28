@@ -169,7 +169,29 @@
     100% { opacity:0; }
   }
 
-  /* ── Mobile: 60% scale ── */
+  /* ── Blink eyelid ── */
+  #blink-lid {
+    position: absolute;
+    left:   83.62%;
+    top:    9.45%;
+    width:  4.5%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scaleY(0);
+    background: radial-gradient(ellipse at 40% 40%, #a86040, #6b3520);
+    pointer-events: none;
+    z-index: 5;
+    transform-origin: center top;
+    /* animation triggered by JS */
+  }
+  @keyframes blink {
+    0%        { transform: translate(-50%, -50%) scaleY(0);    }
+    40%       { transform: translate(-50%, -50%) scaleY(1);    }
+    50%       { transform: translate(-50%, -50%) scaleY(0.05); }
+    70%       { transform: translate(-50%, -50%) scaleY(1);    }
+    100%      { transform: translate(-50%, -50%) scaleY(0);    }
+  }
+
   @media (max-width: 600px) {
     #tv-widget {
       width: 288px; /* 480px x 0.6 */
@@ -193,6 +215,9 @@
 
   <!-- 1) PNG skin (behind everything) -->
   <img id="tv-giraffe" src="TV_Taust.png" alt="" draggable="false"/>
+
+  <!-- 1b) Blink eyelid — covers the eye on blink -->
+  <div id="blink-lid"></div>
 
   <!-- 2) Video screen — fits the grey rect in TV_Taust.png -->
   <div id="screen-wrap">
@@ -283,6 +308,29 @@
   if (window.innerWidth <= 600) {
     document.getElementById('hint').textContent = '🦒 Lohista telekat · Vajuta nuppudele juhtimiseks';
   }
+
+  /* ── Natural randomised blink ── */
+  const lid = document.getElementById('blink-lid');
+  function doBlink() {
+    // play the CSS blink keyframe once
+    lid.style.animation = 'none';
+    lid.offsetHeight; // force reflow to restart animation
+    lid.style.animation = 'blink 0.22s ease-in-out forwards';
+    // schedule next blink: random interval 2–7 seconds
+    // occasionally do a double-blink (two blinks 300ms apart)
+    const doubleChance = Math.random() < 0.25;
+    if (doubleChance) {
+      setTimeout(() => {
+        lid.style.animation = 'none';
+        lid.offsetHeight;
+        lid.style.animation = 'blink 0.22s ease-in-out forwards';
+      }, 320);
+    }
+    const nextBlink = 2000 + Math.random() * 5000;
+    setTimeout(doBlink, nextBlink);
+  }
+  // start first blink after a short random delay
+  setTimeout(doBlink, 1500 + Math.random() * 2000);
 </script>
 </body>
 </html>
