@@ -175,25 +175,48 @@
     border-radius: 50%;
     pointer-events: none;
     z-index: 5;
-    /* closed by default — scaleY(0) = invisible */
     transform: translate(-50%, -50%) scaleY(0);
     transform-origin: center top;
   }
-  /* Right eye (smaller, upper-right): cx=87.53% cy=7.29% r=1.08% */
+  /*
+    Right eye: bbox x=430-458 y=25-59 on 511×547 image
+    centre: cx=444/511=86.89%  cy=42/547=7.68%
+    size:   w=30px=5.87%  h=36px=7.05%  (with 1px margin each side)
+    skin above right eye is pinkish-purple: ~rgb(190,150,190)
+  */
   #lid-right {
-    left: 87.53%;
-    top:  7.29%;
-    width:  2.6%;   /* diameter ~ 2×r + small margin */
-    height: 2.6%;
-    background: radial-gradient(ellipse at 45% 35%, #5a2a1a, #3a1510);
+    left:   86.89%;
+    top:    7.68%;
+    width:  6.5%;
+    height: 7.8%;
+    background:
+      radial-gradient(ellipse at 50% 0%,   rgba(255,255,255,0.55) 0%, transparent 55%),
+      radial-gradient(ellipse at 50% 100%, rgba(0,0,0,0.35)       0%, transparent 55%),
+      radial-gradient(ellipse at 30% 30%,  #c090b8 0%, #7a4870 45%, #4a2045 100%);
+    box-shadow:
+      inset 0 2px 3px rgba(255,255,255,0.4),
+      inset 0 -2px 3px rgba(0,0,0,0.4),
+      0 1px 4px rgba(0,0,0,0.5);
   }
-  /* Left eye (larger, lower-left): cx=83.64% cy=9.49% r=1.41% */
+  /*
+    Left eye: bbox x=410-449 y=38-77 on 511×547 image
+    centre: cx=429.5/511=84.05%  cy=57.5/547=10.51%
+    size:   w=41px=8.02%  h=41px=7.50%  (with 1px margin each side)
+    skin above left eye is warm brown: ~rgb(144,107,88)
+  */
   #lid-left {
-    left: 83.64%;
-    top:  9.49%;
-    width:  3.4%;
-    height: 3.4%;
-    background: radial-gradient(ellipse at 45% 35%, #7a3820, #4a1e0e);
+    left:   84.05%;
+    top:    10.51%;
+    width:  8.8%;
+    height: 8.2%;
+    background:
+      radial-gradient(ellipse at 50% 0%,   rgba(255,255,255,0.5)  0%, transparent 55%),
+      radial-gradient(ellipse at 50% 100%, rgba(0,0,0,0.35)       0%, transparent 55%),
+      radial-gradient(ellipse at 30% 30%,  #c08860 0%, #7a4820 45%, #4a2010 100%);
+    box-shadow:
+      inset 0 2px 3px rgba(255,255,255,0.4),
+      inset 0 -2px 3px rgba(0,0,0,0.4),
+      0 1px 4px rgba(0,0,0,0.5);
   }
   @keyframes eyelid-close {
     0%   { transform: translate(-50%, -50%) scaleY(0);   }
