@@ -175,17 +175,26 @@
 
   @media (max-width: 600px) {
     #tv-widget {
-      width: 288px; /* 480px x 0.6 */
+      width: 288px; /* 480px × 0.6 */
     }
-    .btn { width: 22px; height: 22px; }
+    .btn {
+      width: 20px;  /* 34px × 0.6 */
+      height: 20px;
+    }
+    #screen-off svg {
+      width: 17px;  /* 28px × 0.6 */
+    }
     #hint {
-      font-size: 11px;
-      padding: 5px 14px;
+      font-size: 7px;   /* 12px × 0.6 */
+      padding: 4px 11px; /* 6px/18px × 0.6 */
+      border-radius: 10px;
       white-space: nowrap;
     }
     #toast {
-      font-size: 12px;
-      padding: 7px 16px;
+      font-size: 8px;    /* 13px × 0.6 */
+      padding: 5px 13px; /* 8px/22px × 0.6 */
+      border-radius: 12px;
+      bottom: 16px;      /* 26px × 0.6 */
     }
   }
 </style>
