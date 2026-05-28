@@ -14,7 +14,7 @@
     overflow: hidden;
     user-select: none;
     background: url('TV_Wallpaper.jpg') center/cover no-repeat fixed;
-    cursor: url('TV_Cursor.png') 6 4, auto;
+    cursor: url('TV_Cursor.png') 36 27, auto;
   }
 
   /* ── Draggable TV widget ── */
@@ -24,12 +24,12 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    cursor: url('TV_Cursor.png') 6 4, auto;
+    cursor: url('TV_Cursor.png') 36 27, auto;
     z-index: 10;
     filter: drop-shadow(0 24px 48px rgba(0,0,0,0.6));
     transition: filter 0.3s;
   }
-  #tv-widget:active { cursor: url('TV_Cursor.png') 6 4, auto; }
+  #tv-widget:active { cursor: url('TV_Cursor.png') 36 27, auto; }
   #tv-widget.off {
     filter: drop-shadow(0 12px 24px rgba(0,0,0,0.5)) brightness(0.45) saturate(0.1);
   }
@@ -98,7 +98,7 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    cursor: url('TV_Cursor.png') 6 4, auto;
+    cursor: url('TV_Cursor.png') 36 27, auto;
     pointer-events: auto;
     transform: translate(-50%, -50%);
     display: flex;
@@ -257,7 +257,7 @@
     ox = e.clientX - r.left;
     oy = e.clientY - r.top;
     widget.style.transition = 'none';
-    widget.style.cursor = 'url(\'TV_Cursor.png\') 6 4, auto';
+    widget.style.cursor = 'url(\'TV_Cursor.png\') 36 27, auto';
   });
   window.addEventListener('pointermove', e => {
     if (!dragging) return;
@@ -267,7 +267,7 @@
     widget.style.top  = y + 'px';
     widget.style.transform = 'none';
   });
-  window.addEventListener('pointerup', () => { dragging = false; widget.style.cursor = 'url(\'TV_Cursor.png\') 6 4, auto'; });
+  window.addEventListener('pointerup', () => { dragging = false; widget.style.cursor = 'url(\'TV_Cursor.png\') 36 27, auto'; });
 
   /* start in off state */
   widget.classList.add('off');
