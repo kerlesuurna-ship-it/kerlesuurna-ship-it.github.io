@@ -169,27 +169,37 @@
     100% { opacity:0; }
   }
 
-  /* ── Blink eyelid ── */
-  #blink-lid {
+  /* ── Blink eyelids ── */
+  .blink-lid {
     position: absolute;
-    left:   83.62%;
-    top:    9.45%;
-    width:  4.5%;
-    aspect-ratio: 1;
     border-radius: 50%;
-    transform: translate(-50%, -50%) scaleY(0);
-    background: radial-gradient(ellipse at 40% 40%, #a86040, #6b3520);
     pointer-events: none;
     z-index: 5;
+    /* closed by default — scaleY(0) = invisible */
+    transform: translate(-50%, -50%) scaleY(0);
     transform-origin: center top;
-    /* animation triggered by JS */
   }
-  @keyframes blink {
-    0%        { transform: translate(-50%, -50%) scaleY(0);    }
-    40%       { transform: translate(-50%, -50%) scaleY(1);    }
-    50%       { transform: translate(-50%, -50%) scaleY(0.05); }
-    70%       { transform: translate(-50%, -50%) scaleY(1);    }
-    100%      { transform: translate(-50%, -50%) scaleY(0);    }
+  /* Right eye (smaller, upper-right): cx=87.53% cy=7.29% r=1.08% */
+  #lid-right {
+    left: 87.53%;
+    top:  7.29%;
+    width:  2.6%;   /* diameter ~ 2×r + small margin */
+    height: 2.6%;
+    background: radial-gradient(ellipse at 45% 35%, #5a2a1a, #3a1510);
+  }
+  /* Left eye (larger, lower-left): cx=83.64% cy=9.49% r=1.41% */
+  #lid-left {
+    left: 83.64%;
+    top:  9.49%;
+    width:  3.4%;
+    height: 3.4%;
+    background: radial-gradient(ellipse at 45% 35%, #7a3820, #4a1e0e);
+  }
+  @keyframes eyelid-close {
+    0%   { transform: translate(-50%, -50%) scaleY(0);   }
+    35%  { transform: translate(-50%, -50%) scaleY(1);   }
+    65%  { transform: translate(-50%, -50%) scaleY(1);   }
+    100% { transform: translate(-50%, -50%) scaleY(0);   }
   }
 
   @media (max-width: 600px) {
@@ -216,8 +226,9 @@
   <!-- 1) PNG skin (behind everything) -->
   <img id="tv-giraffe" src="TV_Taust.png" alt="" draggable="false"/>
 
-  <!-- 1b) Blink eyelid — covers the eye on blink -->
-  <div id="blink-lid"></div>
+  <!-- 1b) Blink eyelids — one per eye -->
+  <div class="blink-lid" id="lid-right"></div>
+  <div class="blink-lid" id="lid-left"></div>
 
   <!-- 2) Video screen — fits the grey rect in TV_Taust.png -->
   <div id="screen-wrap">
@@ -309,28 +320,20 @@
     document.getElementById('hint').textContent = '🦒 Lohista telekat · Vajuta nuppudele juhtimiseks';
   }
 
-  /* ── Natural randomised blink ── */
-  const lid = document.getElementById('blink-lid');
+  /* ── Natural randomised blink — both eyes together ── */
+  const lids = [document.getElementById('lid-right'), document.getElementById('lid-left')];
+
   function doBlink() {
-    // play the CSS blink keyframe once
-    lid.style.animation = 'none';
-    lid.offsetHeight; // force reflow to restart animation
-    lid.style.animation = 'blink 0.22s ease-in-out forwards';
-    // schedule next blink: random interval 2–7 seconds
-    // occasionally do a double-blink (two blinks 300ms apart)
-    const doubleChance = Math.random() < 0.25;
-    if (doubleChance) {
-      setTimeout(() => {
-        lid.style.animation = 'none';
-        lid.offsetHeight;
-        lid.style.animation = 'blink 0.22s ease-in-out forwards';
-      }, 320);
-    }
-    const nextBlink = 2000 + Math.random() * 5000;
-    setTimeout(doBlink, nextBlink);
+    lids.forEach(lid => {
+      lid.style.animation = 'none';
+      lid.offsetHeight; // force reflow so animation restarts
+      lid.style.animation = 'eyelid-close 0.35s ease-in-out forwards';
+    });
+    // schedule next blink: 2.5–6 seconds, feels natural
+    setTimeout(doBlink, 2500 + Math.random() * 3500);
   }
-  // start first blink after a short random delay
-  setTimeout(doBlink, 1500 + Math.random() * 2000);
+  // first blink after a short pause so giraffe feels "alive" from the start
+  setTimeout(doBlink, 1000 + Math.random() * 1500);
 </script>
 </body>
 </html>
