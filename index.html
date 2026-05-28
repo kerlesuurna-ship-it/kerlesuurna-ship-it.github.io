@@ -24,12 +24,12 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    cursor: grab;
+    cursor: url('TV_Cursor.png') 6 4, auto;
     z-index: 10;
     filter: drop-shadow(0 24px 48px rgba(0,0,0,0.6));
     transition: filter 0.3s;
   }
-  #tv-widget:active { cursor: grabbing; }
+  #tv-widget:active { cursor: url('TV_Cursor.png') 6 4, auto; }
   #tv-widget.off {
     filter: drop-shadow(0 12px 24px rgba(0,0,0,0.5)) brightness(0.45) saturate(0.1);
   }
@@ -98,7 +98,7 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    cursor: pointer;
+    cursor: url('TV_Cursor.png') 6 4, auto;
     pointer-events: auto;
     transform: translate(-50%, -50%);
     display: flex;
@@ -161,6 +161,22 @@
     15%  { opacity:1; transform: translateX(-50%) translateY(0); }
     80%  { opacity:1; }
     100% { opacity:0; }
+  }
+
+  /* ── Mobile: 60% scale ── */
+  @media (max-width: 600px) {
+    #tv-widget {
+      width: 288px; /* 480px × 0.6 */
+    }
+    #hint {
+      font-size: 11px;
+      padding: 5px 14px;
+      white-space: nowrap;
+    }
+    #toast {
+      font-size: 12px;
+      padding: 7px 16px;
+    }
   }
 </style>
 </head>
@@ -241,7 +257,7 @@
     ox = e.clientX - r.left;
     oy = e.clientY - r.top;
     widget.style.transition = 'none';
-    widget.style.cursor = 'grabbing';
+    widget.style.cursor = 'url(\'TV_Cursor.png\') 6 4, auto';
   });
   window.addEventListener('pointermove', e => {
     if (!dragging) return;
@@ -251,10 +267,15 @@
     widget.style.top  = y + 'px';
     widget.style.transform = 'none';
   });
-  window.addEventListener('pointerup', () => { dragging = false; widget.style.cursor = 'grab'; });
+  window.addEventListener('pointerup', () => { dragging = false; widget.style.cursor = 'url(\'TV_Cursor.png\') 6 4, auto'; });
 
   /* start in off state */
   widget.classList.add('off');
+
+  /* mobile: swap hint text to touch-friendly wording */
+  if (window.innerWidth <= 600) {
+    document.getElementById('hint').textContent = '🦒 Lohista telekat · Vajuta nuppudele juhtimiseks';
+  }
 </script>
 </body>
 </html>
