@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="et">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Giraffe TV</title>
+<link rel="icon" type="image/png" href="TV_Favicon.png"/>
 <style>
   *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
@@ -13,6 +14,7 @@
     overflow: hidden;
     user-select: none;
     background: url('TV_Wallpaper.jpg') center/cover no-repeat fixed;
+    cursor: url('TV_Cursor.png') 6 4, auto;
   }
 
   /* ── Draggable TV widget ── */
@@ -51,9 +53,9 @@
   */
   #screen-wrap {
     position: absolute;
-    left:   19.569%;
+    left:   23.0%;
     top:    46.618%;
-    width:  55.186%;
+    width:  51.755%;
     height: 23.766%;
     overflow: hidden;
     border-radius: 4px;
@@ -180,16 +182,16 @@
   </div>
 
   <!-- 3) Invisible button hit areas -->
-  <div class="btn" id="btn-power" title="Power"></div>
-  <div class="btn" id="btn-pause" title="Pause"></div>
-  <div class="btn" id="btn-play"  title="Play"></div>
-  <div class="btn" id="btn-rw"   title="Rewind 10s"></div>
-  <div class="btn" id="btn-ff"   title="Fast-forward 10s"></div>
+  <div class="btn" id="btn-power" title="Toide"></div>
+  <div class="btn" id="btn-pause" title="Peata"></div>
+  <div class="btn" id="btn-play"  title="Esita"></div>
+  <div class="btn" id="btn-rw"   title="Keri tagasi 10s"></div>
+  <div class="btn" id="btn-ff"   title="Keri edasi 10s"></div>
 
 </div><!-- #tv-widget -->
 
 <div id="toast"></div>
-<div id="hint">🦒 Drag the TV anywhere &nbsp;·&nbsp; Click the buttons to control</div>
+<div id="hint">🦒 Lohista telekat kuhu soovid &nbsp;·&nbsp; Vajuta nuppudele juhtimiseks</div>
 
 <script>
   const video     = document.getElementById('tv-video');
@@ -213,19 +215,19 @@
       screenOff.classList.add('hidden');
       video.currentTime = 0;
       video.play().catch(()=>{});
-      showToast('📺  ON');
+      showToast('📺  Sees');
     } else {
       widget.classList.add('off');
       screenOff.classList.remove('hidden');
       video.pause();
       video.currentTime = 0;
-      showToast('📺  OFF');
+      showToast('📺  Väljas');
     }
   }
 
   document.getElementById('btn-power').onclick = e => { e.stopPropagation(); setPower(!powered); };
-  document.getElementById('btn-play').onclick   = e => { e.stopPropagation(); if (!powered) { setPower(true); return; } video.play().catch(()=>{}); showToast('▶  Play'); };
-  document.getElementById('btn-pause').onclick  = e => { e.stopPropagation(); if (!powered) return; video.pause(); showToast('⏸  Pause'); };
+  document.getElementById('btn-play').onclick   = e => { e.stopPropagation(); if (!powered) { setPower(true); return; } video.play().catch(()=>{}); showToast('▶  Esita'); };
+  document.getElementById('btn-pause').onclick  = e => { e.stopPropagation(); if (!powered) return; video.pause(); showToast('⏸  Peata'); };
   document.getElementById('btn-rw').onclick     = e => { e.stopPropagation(); if (!powered) return; video.currentTime = Math.max(0, video.currentTime - 10); showToast('⏮  −10s'); };
   document.getElementById('btn-ff').onclick     = e => { e.stopPropagation(); if (!powered) return; video.currentTime = Math.min(video.duration || Infinity, video.currentTime + 10); showToast('⏭  +10s'); };
 
