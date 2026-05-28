@@ -95,8 +95,8 @@
   */
   .btn {
     position: absolute;
-    width: 40px;
-    height: 40px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     cursor: url('TV_Cursor.png') 36 27, auto;
     pointer-events: auto;
@@ -109,11 +109,17 @@
   .btn:hover  { background: rgba(255,255,200,0.22); }
   .btn:active { background: rgba(255,255,200,0.42); }
 
-  #btn-power { left: 48.728%; top: 78.245%; }
-  #btn-pause { left: 42.661%; top: 78.793%; }
-  #btn-play  { left: 54.990%; top: 78.611%; }
-  #btn-rw    { left: 31.507%; top: 77.148%; }
-  #btn-ff    { left: 67.123%; top: 77.148%; }
+  /* Positions pixel-measured from TV_Taust.png (511x547):
+     Rewind: cx=138.5/511=27.10%  cy=402.1/547=73.51%
+     Pause:  cx=207.6/511=40.63%  cy=412.5/547=75.41%
+     Power:  cx=245.0/511=47.95%  cy=409.4/547=74.84%
+     Play:   cx=282.5/511=55.28%  cy=410.7/547=75.08%
+     FF:     cx=355.5/511=69.57%  cy=401.8/547=73.46% */
+  #btn-rw    { left: 27.10%; top: 73.51%; }
+  #btn-pause { left: 40.63%; top: 75.41%; }
+  #btn-power { left: 47.95%; top: 74.84%; }
+  #btn-play  { left: 55.28%; top: 75.08%; }
+  #btn-ff    { left: 69.57%; top: 73.46%; }
 
   /* ── Toast ── */
   #toast {
@@ -166,8 +172,9 @@
   /* ── Mobile: 60% scale ── */
   @media (max-width: 600px) {
     #tv-widget {
-      width: 288px; /* 480px × 0.6 */
+      width: 288px; /* 480px x 0.6 */
     }
+    .btn { width: 22px; height: 22px; }
     #hint {
       font-size: 11px;
       padding: 5px 14px;
